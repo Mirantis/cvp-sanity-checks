@@ -18,10 +18,13 @@ class salt_remote:
         login_request = requests.post(os.path.join(config['SALT_URL'],
                                                    'login'),
                                       headers=headers, data=login_payload)
-        request = requests.post(config['SALT_URL'], headers=headers,
-                                data=accept_key_payload,
-                                cookies=login_request.cookies)
-        return request.json()['return'][0]
+        if login_request.ok:
+            request = requests.post(config['SALT_URL'], headers=headers,
+                                    data=accept_key_payload,
+                                    cookies=login_request.cookies)
+            return request.json()['return'][0]
+        else:
+            raise EnvironmentError("401 Not authorized.")
 
 
 def init_salt_client():

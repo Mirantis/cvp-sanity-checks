@@ -1,5 +1,15 @@
 ---
-# MANDATORY: Credentials for Salt master
+# MANDATORY: Credentials for Salt Master
+# SALT_URL should consist of url and port.
+# For example: http://10.0.0.1:6969
+# 6969 - default Salt Master port to listen
+# Can be found on cfg* node using
+# "salt-call pillar.get _param:salt_master_host"
+# and "salt-call pillar.get _param:salt_master_port"
+# SALT_USERNAME by default: salt
+# It can be verified with "salt-call shadow.info salt"
+# SALT_PASSWORD you can find on cfg* node using
+# "grep -r salt_api_password /srv/salt/reclass/classes"
 SALT_URL: <salt_url>
 SALT_USERNAME: <salt_usr>
 SALT_PASSWORD: <salt_pwd>
@@ -23,4 +33,4 @@ test_mtu:
 # this test may skip specific node (use fqdn)
 test_ntp_sync:
   { #"skipped_nodes": [""],
-    "time_deviation": 30}
+    "time_deviation": 1}
