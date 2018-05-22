@@ -18,6 +18,18 @@ class salt_remote:
             accept_key_payload['arg'] = param
 
         try:
+            if "http_proxy" in os.environ:
+                raise Exception("PROXY_SET")
+            if "https_proxy" in os.environ:
+                raise Exception("PROXY_SET")
+        except Exception:
+            print "\033[91m\nYou have proxy env variables configured " \
+            "(http_proxy or https_proxy). Please unset them " \
+            "both and restart if you have any problems " \
+            "with test execution.\033[0m\n"
+            traceback.print_exc(file=sys.stdout)
+
+        try:
             login_request = requests.post(os.path.join(config['SALT_URL'],
                                                        'login'),
                                           headers=headers, data=login_payload)
