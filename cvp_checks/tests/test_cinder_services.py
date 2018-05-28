@@ -16,5 +16,5 @@ def test_cinder_services(local_salt_client):
         expr_form='pillar')
     assert service_down[service_down.keys()[0]] == '', \
         '''Some cinder services are in wrong state'''
-    assert cinder_volume[cinder_volume.keys()[0]] == '1', \
-        '''There are more than 1 host/backend for cinder'''
+    assert int(cinder_volume[cinder_volume.keys()[0]]) >= 1, \
+        '''There are less than 1 host/backend for cinder'''
