@@ -19,14 +19,16 @@ class salt_remote:
 
         try:
             if "http_proxy" in os.environ:
-                raise Exception("PROXY_SET")
+                raise Exception("HTTP_PROXY_SET")
             if "https_proxy" in os.environ:
-                raise Exception("PROXY_SET")
+                raise Exception("HTTPS_PROXY_SET")
+            if "no_proxy" in os.environ:
+                raise Exception("NO_PROXY_SET")
         except Exception:
             print "\033[91m\nYou have proxy env variables configured " \
-            "(http_proxy or https_proxy). Please unset them " \
-            "both and restart if you have any problems " \
-            "with test execution.\033[0m\n"
+            "(http_proxy, https_proxy or no_proxy). Please make sure " \
+            "that you configured them correctly and restart if you " \
+            "have any problems with test execution.\033[0m\n"
             traceback.print_exc(file=sys.stdout)
 
         try:
