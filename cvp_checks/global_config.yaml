@@ -58,6 +58,29 @@ groups: {
          gtw: 'I@neutron:gateway'
 }
 
+simple_packages: {'mitaka': '{"galera": "25.3.10-1~u14.04+mcp1", "telegraf": "1.2", "zookeeper": "3.5", "kibana": "4.6.4", "kafka": "0.10.2.0", "ceph": "10.2.9", "glusterfs": "3.7", "mysql": "5.6.23", "ironic": "7.0", "glance": "12.0.0", "qemu": "2.5", "cassandra": "3.0.13", "git": "1:2.7.4-0ubuntu1", "redis": "3.2", "nova": "13.1.4", "grafana": "4.3.2", "keystone": "9.3.0", "etcd": "3.2.2", "neutron": "8.4.0", "designate": "4.0", "mongodb": "3.4", "influxdb": "1.3.3-1", "libvirt": "1.3.1", "heka": "0.10.1", "heat": "6.1.2", "haproxy": "1.6.3-1~u14.04+mcp1", "ceilometer": "6.1.5", "postgresql": "9.6.2", "nginx": "1.10.0-0ubuntu0.16.0", "opencontrail": "3.1.1", "prometheus": "1.6.3", "rabbitmq": "3.6.6-1~u14.04+mcp1", "elasticsearch": "2.4.5", "horizon": "9.1.2", "cinder": "8.1.1", "virtlet": "0.9.3", "reclass": "1.4.1", "salt": "2016.3"}',
+                 # https://docs.mirantis.com/mcp/q3-17/mcp-release-notes/components-versions.html
+                   'ocata':'{"galera": "25.3.14-1", "telegraf": "1.5", "zookeeper": "3.4.5", "kibana": "5.6.5", "kafka": "2.9.2-0.8.2.0-0contrail0", "ceph": "12.2.2-1enial", "glusterfs": "3.8.15", "mysql": "5.6.35", "ironic": "7.0", "glance": "14.0", "qemu": "2.5", "cassandra": "2.1.20", "git": "2.7.4", "redis": "2.8.4-2", "nova": "15.1.", "grafana": "4.5.2", "keystone": "11.0", "etcd": "2.2.5", "neutron": "10.0", "designate": "4.0", "mongodb": "3.4", "influxdb": "1.4.2", "libvirt": "1.3.1", "heka": "0.10.1", "heat": "8.0", "haproxy": "1.6.3", "ceilometer": "8.1", "postgresql": "9.6", "nginx": "1.10.3", "opencontrail": "3.2", "prometheus": "2.0.0", "rabbitmq": "3.6.5", "elasticsearch": "5.6.5", "horizon": "11.0", "cinder": "10.0", "virtlet": "0.9.3", "reclass": "1.4.1", "salt": "2016.3.8"}',
+                 # https://docs.mirantis.com/mcp/q4-17/mcp-release-notes/components-versions.html
+                   'pike': '{"galera": "25.3.14-1", "fluentd": "1.0.2", "telegraf": "1.5.3", "aodh": "5", "zookeeper": "3.4.5", "kibana": "5.6.5", "kafka": "2.9.2-0.8.2.0-0contrail0", "ceph": "12.2.4-1enial", "glusterfs": "3.8.15", "mysql": "5.6.35", "ironic": "9.1", "glance": "15.0", "grafana": "5.0.3", "qemu": "1:2.11+dfsg-1.1~u16.04+mcp1", "barbican": "5.0", "gnocchi": "4.0.4", "cassandra": "2.1.20", "git": "2.7.4", "redis": "2.8.4-2", "nova": "16.1", "keystone": "12.0", "etcd": "3.3", "neutron": "11.0", "designate": "5.0.1", "haproxy": "1.6.3", "manila": "5.0.1", "mongodb": "3.4", "influxdb": "1.4.2", "libvirt": "4.0.0-1.7~u16.04+mcp1", "heka": "0.10.1", "heat": "9.0", "tls": "1.2", "ceilometer": "9.0.5", "postgresql": "9.6", "nginx": "1.10.3", "opencontrail": "3.2", "prometheus": "2.2.1", "rabbitmq": "rabbitmq-server", "jenkins-master": "2.100", "elasticsearch": "5.6.5", "panko": "3.1", "horizon": "12.0", "cinder": "11.1", "virtlet": "1.0.0", "reclass": "1.4.1", "salt": "2016.3.8"}'
+                 # https://docs.mirantis.com/mcp/q1-18/mcp-release-notes/components-versions.html
+                 }
+
+exclude_packages: [ 'python-neutron-lib', 'python-glance-store',
+                    'python-neutronclient', 'python-glanceclient',
+                    'python-pymysql', 'python-designateclient',
+                    'python-cinderclient', 'python-mysqldb',
+                    'python-heatclient', 'glance-store-common',
+                    'python-novaclient', 'python-ironic-lib',
+                    'python-ironicclient', 'python-elasticsearch-curator',
+                    'python-elasticsearch', 'prometheus-relay',
+                    'influxdb-relay', 'postgresql-client-common',
+                    'python-horizon-neutron-lbaasv2-panel', 'ipxe-qemu',
+                    'libvirt-exporter', 'libdbd-mysql', 'elasticsearch-curator',
+                    'postgresql-common', 'python-gitdb', 'python-github',
+                    'python-aodhclient', 'python-psycopg2',
+                    'libdbd-mysql-perl', 'libdbd-mysql:amd64', 'python-influxdb']
+
 # mtu test setting
 # this test may skip groups (see example)
 test_mtu:
