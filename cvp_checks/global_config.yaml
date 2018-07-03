@@ -65,6 +65,8 @@ test_mtu:
     "skipped_ifaces": ["bonding_masters", "lo", "veth", "tap", "cali", "qv", "qb"]}
 # mask for interfaces to skip
 
+drivetrain_version: ''
+
 # ntp test setting
 # this test may skip specific node (use fqdn)
 test_ntp_sync:
