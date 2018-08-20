@@ -35,6 +35,26 @@ def test_elasticsearch_cluster(local_salt_client):
             json.dumps(resp, indent=4))
 
 
+def test_kibana_status(local_salt_client):
+    salt_output = local_salt_client.cmd(
+        'kibana:server',
+        'pillar.get',
+        ['_param:haproxy_elasticsearch_bind_host'],
+        expr_form='pillar')
+    proxies = {"http": None, "https": None}
+    for node in salt_output.keys():
+        IP = salt_output[node]
+        resp = requests.get('http://{}:5601/api/status'.format(IP),
+                            proxies=proxies).content
+        body = json.loads(resp)
+        assert body['status']['overall']['state'] == "green", \
+            "Kibana status is not expected: {}".format(
+            body['status']['overall'])
+        for i in body['status']['statuses']:
+            assert i['state'] == "green", \
+                "Kibana statuses are unexpected: {}".format(i)
+
+
 def test_elasticsearch_node_count(local_salt_client):
     now = datetime.datetime.now()
     today = now.strftime("%Y.%m.%d")
