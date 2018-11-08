@@ -27,6 +27,17 @@ def check_prometheus(local_salt_client):
 
 
 @pytest.fixture(scope='session')
+def check_alerta(local_salt_client):
+    salt_output = local_salt_client.cmd(
+        'prometheus:alerta',
+        'test.ping',
+        expr_form='pillar')
+    if not salt_output:
+        pytest.skip("Alerta service or prometheus:alerta pillar \
+              are not found on this environment.")
+
+
+@pytest.fixture(scope='session')
 def check_kibana(local_salt_client):
     salt_output = local_salt_client.cmd(
         'kibana:server',

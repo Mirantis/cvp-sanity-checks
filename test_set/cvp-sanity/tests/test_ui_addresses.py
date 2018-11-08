@@ -71,3 +71,35 @@ def test_ui_grafana(local_salt_client):
         expr_form='pillar')
     assert len(result[result.keys()[0]]) != 0, \
         'Grafana page is not reachable on {} from ctl nodes'.format(IP)
+
+
+@pytest.mark.usefixtures('check_alerta')
+def test_internal_ui_alerta(local_salt_client):
+    IP = utils.get_monitoring_ip('stacklight_monitor_address')
+    protocol = 'http'
+    port = '15017'
+    url = "{}://{}:{}".format(protocol, IP, port)
+    result = local_salt_client.cmd(
+        'keystone:server',
+        'cmd.run',
+        ['curl {}/ 2>&1 | \
+         grep Alerta'.format(url)],
+        expr_form='pillar')
+    assert len(result[result.keys()[0]]) != 0, \
+        'Internal Alerta page is not reachable on {} from ctl nodes'.format(url)
+
+
+@pytest.mark.usefixtures('check_alerta')
+def test_public_ui_alerta(local_salt_client):
+    IP = utils.get_monitoring_ip('openstack_proxy_address')
+    protocol = 'https'
+    port = '15017'
+    url = "{}://{}:{}".format(protocol, IP, port)
+    result = local_salt_client.cmd(
+        'keystone:server',
+        'cmd.run',
+        ['curl {}/ 2>&1 | \
+         grep Alerta'.format(url)],
+        expr_form='pillar')
+    assert len(result[result.keys()[0]]) != 0, \
+        'Public Alerta page is not reachable on {} from ctl nodes'.format(url)
