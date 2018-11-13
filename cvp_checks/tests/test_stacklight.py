@@ -39,6 +39,21 @@ def test_elasticsearch_cluster(local_salt_client):
 
 
 @pytest.mark.usefixtures('check_kibana')
+def test_kibana_status(local_salt_client):
+    proxies = {"http": None, "https": None}
+    IP = utils.get_monitoring_ip('stacklight_log_address')
+    resp = requests.get('http://{}:5601/api/status'.format(IP),
+                        proxies=proxies).content
+    body = json.loads(resp)
+    assert body['status']['overall']['state'] == "green", \
+        "Kibana status is not expected: {}".format(
+        body['status']['overall'])
+    for i in body['status']['statuses']:
+        assert i['state'] == "green", \
+            "Kibana statuses are unexpected: {}".format(i)
+
+
+@pytest.mark.usefixtures('check_kibana')
 def test_elasticsearch_node_count(local_salt_client):
     now = datetime.datetime.now()
     today = now.strftime("%Y.%m.%d")
