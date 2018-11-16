@@ -4,9 +4,9 @@ USER root
 
 WORKDIR /var/lib/
 
-RUN mkdir -p cvp-sanity-checks/
+RUN mkdir -p cvp-sanity/
 
-COPY . cvp-sanity-checks/
+COPY . cvp-sanity/
 
 RUN apt-get update && \
     apt-get install -y python-pip git curl wget vim inetutils-ping libsasl2-dev python-dev libldap2-dev libssl-dev && \
