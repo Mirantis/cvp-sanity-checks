@@ -39,13 +39,6 @@ class salt_remote:
                                     proxies=proxies)
 
             response = request.json()['return'][0]
-            not_responded = [k for k,v in response.iteritems() if v is False]
-            if not_responded:
-                print ("WARNING: Some nodes are unavailable and removed "
-                      "from response: {}".format(', '.join(not_responded))
-                )
-            for node in not_responded:
-                del response[node]
             return response
 
         except Exception as e:
