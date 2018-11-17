@@ -180,3 +180,15 @@ def test_running_telegraf_services(local_salt_client):
               if status is False]
     assert result == [], 'Telegraf service is not running ' \
                          'on following nodes: {}'.format(result)
+
+
+def test_running_fluentd_services(local_salt_client):
+    salt_output = local_salt_client.cmd('fluentd:agent',
+                                        'service.status',
+                                        'td-agent',
+                                        expr_form='pillar')
+    result = [{node: status} for node, status
+              in salt_output.items()
+              if status is False]
+    assert result == [], 'Fluentd check failed: td-agent service is not ' \
+                         'running on following nodes:'.format(result)
