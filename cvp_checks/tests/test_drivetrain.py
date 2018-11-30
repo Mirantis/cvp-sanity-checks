@@ -310,7 +310,7 @@ def test_jenkins_jobs_branch(local_salt_client):
             expected_version = 'master'
         if BranchSpec:
             actual_version = BranchSpec[0].getElementsByTagName('name')[0].childNodes[0].data
-            if ( actual_version != expected_version ) and ( job_name not in ['cvp-func','cvp-ha','cvp-perf'] ) :
+            if ( actual_version != expected_version ) and ( job_name not in ['cvp-func','cvp-ha','cvp-perf','upgrade-mcp-release'] ) :
                 version_mismatch.append("Job {0} has {1} branch."
                                         "Expected {2}".format(job_name,
                                                               actual_version,
