@@ -8,6 +8,8 @@ def test_ui_horizon(local_salt_client):
         'pillar.get',
         ['_param:cluster_public_host'],
         expr_form='pillar')
+    if not salt_output:
+        pytest.skip("Horizon is not enabled on this environment")
     IP = [salt_output[node] for node in salt_output
           if salt_output[node]]
     result = local_salt_client.cmd(
