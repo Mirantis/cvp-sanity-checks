@@ -5,7 +5,7 @@ def test_nova_services_status(local_salt_client):
     result = local_salt_client.cmd(
         'keystone:server',
         'cmd.run',
-        ['. /root/keystonerc; nova service-list | grep "down\|disabled" | grep -v "Forced down"'],
+        ['. /root/keystonercv3; nova service-list | grep "down\|disabled" | grep -v "Forced down"'],
         expr_form='pillar')
 
     if not result:
