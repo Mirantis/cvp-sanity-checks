@@ -13,12 +13,12 @@ def test_cinder_services(local_salt_client):
     service_down = local_salt_client.cmd(
         'keystone:server',
         'cmd.run',
-        ['. /root/keystonerc; cinder service-list | grep "down\|disabled"'],
+        ['. /root/keystonercv3; cinder service-list | grep "down\|disabled"'],
         expr_form='pillar')
     cinder_volume = local_salt_client.cmd(
         'keystone:server',
         'cmd.run',
-        ['. /root/keystonerc; cinder service-list | grep -c "volume"'],
+        ['. /root/keystonercv3; cinder service-list | grep -c "volume"'],
         expr_form='pillar')
     backends_cinder = cinder_backends_info[cinder_backends_info.keys()[0]]
     backends_num = len(backends_cinder.keys())
