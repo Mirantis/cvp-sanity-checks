@@ -105,5 +105,7 @@ def print_node_version(local_salt_client):
         def write_report():
             print(report_text)
         atexit.register(write_report)
+        yield
     except Exception as e:
         print("print_node_version:: some error occurred: {}".format(e))
+        yield
