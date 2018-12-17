@@ -1,4 +1,5 @@
 import pytest
+import atexit
 import cvp_checks.utils as utils
 
 
@@ -76,31 +77,33 @@ def print_node_version(local_salt_client):
                 Prints nothing otherwise
         :return None
     """
-    filename_with_versions = "/etc/image_version"
-    cat_image_version_file = "if [ -f '{name}' ]; then \
-                                    cat {name}; \
-                                else \
-                                    echo BUILD_TIMESTAMP='no {name}'; \
-                                    echo BUILD_TIMESTAMP_RFC='no {name}'; \
-                                fi ".format(name=filename_with_versions)
+    try:
+        filename_with_versions = "/etc/image_version"
+        cat_image_version_file = "if [ -f '{name}' ]; then \
+                                        cat {name}; \
+                                    else \
+                                        echo BUILD_TIMESTAMP='no {name}'; \
+                                        echo BUILD_TIMESTAMP_RFC='no {name}'; \
+                                    fi ".format(name=filename_with_versions)
 
-    list_version = local_salt_client.cmd(
-        '*',
-        'cmd.run',
-        'echo "NODE_INFO=$(uname -sr)" && ' + cat_image_version_file,
-        expr_form='compound')
-    if list_version.__len__() == 0:
-        yield
-    parsed = {k: v.split('\n') for k, v in list_version.items()}
-    columns = [name.split('=')[0] for name in parsed.values()[0]]
+        list_version = local_salt_client.cmd(
+            '*',
+            'cmd.run',
+            'echo "NODE_INFO=$(uname -sr)" && ' + cat_image_version_file,
+            expr_form='compound')
+        if list_version.__len__() == 0:
+            yield
+        parsed = {k: v.split('\n') for k, v in list_version.items()}
+        columns = [name.split('=')[0] for name in parsed.values()[0]]
 
-    template = "{:<40} | {:<25} | {:<25} | {:<25}\n"
+        template = "{:<40} | {:<25} | {:<25} | {:<25}\n"
 
-    report_text = template.format("NODE", *columns)
-    for node, data in sorted(parsed.items()):
-        report_text += template.format(node, *[item.split("=")[1] for item in data])
+        report_text = template.format("NODE", *columns)
+        for node, data in sorted(parsed.items()):
+            report_text += template.format(node, *[item.split("=")[1] for item in data])
 
-    def write_report():
-        print(report_text)
-    atexit.register(write_report)
-    yield
+        def write_report():
+            print(report_text)
+        atexit.register(write_report)
+    except Exception as e:
+        print("print_node_version:: some error occurred: {}".format(e))
