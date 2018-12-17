@@ -162,9 +162,7 @@ def test_drivetrain_openldap(local_salt_client):
     searchFilter = 'cn={0}'.format(test_user_name)
     #Get a test job name from config
     config = utils.get_configuration()
-    jenkins_test_job = config['jenkins_test_job']
-    if not jenkins_test_job or jenkins_test_job == '':
-        jenkins_test_job = 'git-mirror-downstream-pipeline-library'
+    jenkins_cvp_job = config['jenkins_cvp_job']
     #Open connection to ldap and creating test user in admins group
     try:
         ldap_server = ldap.initialize(ldap_url)
@@ -180,7 +178,7 @@ def test_drivetrain_openldap(local_salt_client):
     try:
         #Check connection between Jenkins and LDAP
         jenkins_server = join_to_jenkins(local_salt_client,test_user_name,'aSecretPassw')
-        jenkins_version = jenkins_server.get_job_name(jenkins_test_job)
+        jenkins_version = jenkins_server.get_job_name(jenkins_cvp_job)
         #Check connection between Gerrit and LDAP
         gerrit_server = join_to_gerrit(local_salt_client,'admin',ldap_password)
         gerrit_check = gerrit_server.get("/changes/?q=owner:self%20status:open")
@@ -215,8 +213,8 @@ def test_drivetrain_jenkins_job(local_salt_client):
     #Getting Jenkins test job name from configuration
     config = utils.get_configuration()
     jenkins_test_job = config['jenkins_test_job']
-    if not jenkins_test_job or jenkins_test_job == '':
-        jenkins_test_job = 'git-mirror-downstream-mk-pipelines'
+    if not server.get_job_name(jenkins_test_job):
+        server.create_job(jenkins_test_job, jenkins.EMPTY_CONFIG_XML)
     if server.get_job_name(jenkins_test_job):
         next_build_num = server.get_job_info(jenkins_test_job)['nextBuildNumber']
         #If this is first build number skip building check
@@ -227,10 +225,7 @@ def test_drivetrain_jenkins_job(local_salt_client):
             last_build_status = server.get_build_info(jenkins_test_job,last_build_num)['building']
             if last_build_status:
                 pytest.skip("Test job {0} is already running").format(jenkins_test_job)
-        #This jenkins module doesn't work with build_job function without parameters
-        #Just send some fake parameters. All others will be used from default values
-        param_dict = {'foo':'bar'}
-        server.build_job(jenkins_test_job, param_dict)
+        server.build_job(jenkins_test_job)
         timeout = 0
         #Use job status True by default to exclude timeout between build job and start job.
         job_status = True

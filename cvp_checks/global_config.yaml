@@ -69,7 +69,8 @@ test_mtu:
 drivetrain_version: ''
 
 # jenkins job to run during the test
-jenkins_test_job: 'git-mirror-downstream-mk-pipelines'
+jenkins_test_job: 'DT-test-job'
+jenkins_cvp_job: 'cvp-sanity'
 
 # ntp test setting
 # this test may skip specific node (use fqdn)
