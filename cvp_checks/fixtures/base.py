@@ -64,3 +64,43 @@ def contrail(local_salt_client):
     if len(versions) != 1:
         pytest.fail('Contrail versions are not the same: {}'.format(probe))
     pytest.contrail = str(versions.pop())[:1]
+
+
+@pytest.fixture(autouse=True, scope='session')
+def print_node_version(local_salt_client):
+    """
+        Gets info about each node using salt command, info is represented as a dictionary with :
+        {node_name1: output1, node_name2: ...}
+
+        :print to output the table with results after completing all tests if nodes and salt output exist.
+                Prints nothing otherwise
+        :return None
+    """
+    filename_with_versions = "/etc/image_version"
+    cat_image_version_file = "if [ -f '{name}' ]; then \
+                                    cat {name}; \
+                                else \
+                                    echo BUILD_TIMESTAMP='no {name}'; \
+                                    echo BUILD_TIMESTAMP_RFC='no {name}'; \
+                                fi ".format(name=filename_with_versions)
+
+    list_version = local_salt_client.cmd(
+        '*',
+        'cmd.run',
+        'echo "NODE_INFO=$(uname -sr)" && ' + cat_image_version_file,
+        expr_form='compound')
+    if list_version.__len__() == 0:
+        yield
+    parsed = {k: v.split('\n') for k, v in list_version.items()}
+    columns = [name.split('=')[0] for name in parsed.values()[0]]
+
+    template = "{:<40} | {:<25} | {:<25} | {:<25}\n"
+
+    report_text = template.format("NODE", *columns)
+    for node, data in sorted(parsed.items()):
+        report_text += template.format(node, *[item.split("=")[1] for item in data])
+
+    def write_report():
+        print(report_text)
+    atexit.register(write_report)
+    yield
