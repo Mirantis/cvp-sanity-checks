@@ -7,14 +7,14 @@ How to start
 =======================
 
 1) Clone repo to any node (node must have an access via http to salt master):
-```bash 
+```bash
    # root@cfg-01:~/# git clone https://github.com/Mirantis/cvp-sanity-checks
    # cd cvp-sanity-checks
 ```
 Use git config --global http.proxy http://proxyuser:proxypwd@proxy.server.com:8080
 if needed.
 
-2) Install virtualenv 
+2) Install virtualenv
 ```bash
    # curl -O https://pypi.python.org/packages/source/v/virtualenv/virtualenv-X.X.tar.gz
    # tar xvfz virtualenv-X.X.tar.gz
@@ -22,11 +22,12 @@ if needed.
    # sudo python setup.py install
 ```
 or
-```bash
+1```bash
    # apt-get install python-virtualenv
 ```
 
 3) Create virtualenv and install requirements and package:
+
 ```bash
    # virtualenv --system-site-packages .venv
    # source .venv/bin/activate
@@ -36,7 +37,7 @@ or
 ```
 
 4) Configure:
-```bash 
+```bash
    # vim cvp_checks/global_config.yaml
 ```
 SALT credentials are mandatory for tests.
@@ -55,10 +56,10 @@ export skipped_nodes='ctl01.example.com,ctl02.example.com'
 ```
 
 5) Start tests:
-```bash 
+```bash
    # pytest --tb=short -sv cvp_checks/tests/
 ```
 or
-```bash 
+```bash
    # pytest -sv cvp_checks/tests/ --ignore cvp_checks/tests/test_mtu.py
 ```
