@@ -266,9 +266,10 @@ def test_drivetrain_components_and_versions(local_salt_client):
         'cmd.run',
         ['docker service ls'],
         expr_form='compound')
+    #  'ldap_server' removed because it is an external component now v 1.1.8
     not_found_services = ['gerrit_db', 'gerrit_server', 'jenkins_master',
                           'jenkins_slave01', 'jenkins_slave02',
-                          'jenkins_slave03', 'ldap_admin', 'ldap_server']
+                          'jenkins_slave03', 'ldap_admin']
     version_mismatch = []
     for line in salt_output[salt_output.keys()[0]].split('\n'):
         for service in not_found_services:
