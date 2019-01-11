@@ -65,14 +65,20 @@ def test_elasticsearch_node_count(local_salt_client):
         expr_form='pillar')
 
     IP = salt_output.values()[0]
+    headers = {'Content-type': 'application/json', 'Accept': 'text/plain'}
     proxies = {"http": None, "https": None}
-    resp = json.loads(requests.post('http://{0}:9200/log-{1}/_search?pretty'.
-                                    format(IP, today),
-                                    proxies=proxies,
-                                    data='{"size": 0, "aggs": '
-                                         '{"uniq_hostname": '
-                                         '{"terms": {"size": 500, '
-                                         '"field": "Hostname.keyword"}}}}').text)
+    data = ('{"size": 0, "aggs": '
+            '{"uniq_hostname": '
+            '{"terms": {"size": 500, '
+            '"field": "Hostname.keyword"}}}}')
+    response = requests.post(
+        'http://{0}:9200/log-{1}/_search?pretty'.format(IP, today),
+        proxies=proxies,
+        headers=headers,
+        data=data)
+    assert 200 == response.status_code, 'Unexpected code {}'.format(
+        response.text)
+    resp = json.loads(response.text)
     cluster_domain = local_salt_client.cmd('salt:control',
                                            'pillar.get',
                                            ['_param:cluster_domain'],
