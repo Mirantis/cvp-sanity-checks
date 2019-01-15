@@ -282,7 +282,8 @@ def test_drivetrain_components_and_versions(local_salt_client):
     #  'ldap_server' removed because it is an external component now v 1.1.8
     not_found_services = ['gerrit_db', 'gerrit_server', 'jenkins_master',
                           'jenkins_slave01', 'jenkins_slave02',
-                          'jenkins_slave03', 'ldap_admin']
+                          'jenkins_slave03', 'ldap_admin', 'docker_registry',
+                          'docker_visualizer']
     version_mismatch = []
     for line in salt_output[salt_output.keys()[0]].split('\n'):
         for service in not_found_services:
@@ -319,7 +320,7 @@ def test_jenkins_jobs_branch(local_salt_client):
             expected_version = 'master'
         if BranchSpec:
             actual_version = BranchSpec[0].getElementsByTagName('name')[0].childNodes[0].data
-            if ( actual_version != expected_version ) and ( job_name not in ['cvp-func','cvp-ha','cvp-perf','upgrade-mcp-release'] ) :
+            if ( actual_version != expected_version ) and ( job_name not in ['upgrade-mcp-release'] ) :
                 version_mismatch.append("Job {0} has {1} branch."
                                         "Expected {2}".format(job_name,
                                                               actual_version,
