@@ -258,9 +258,22 @@ def test_drivetrain_services_replicas(local_salt_client):
 
 def test_drivetrain_components_and_versions(local_salt_client):
     config = utils.get_configuration()
-    version = config['drivetrain_version'] or []
-    if not version or version == '':
-        pytest.skip("drivetrain_version is not defined. Skipping")
+    if not config['drivetrain_version']:
+        version = \
+            local_salt_client.cmd(
+                'I@salt:master',
+                'pillar.get',
+                ['_param:mcp_version'],
+                expr_form='compound').values()[0] or \
+            local_salt_client.cmd(
+                'I@salt:master',
+                'pillar.get',
+                ['_param:apt_mk_version'],
+                expr_form='compound').values()[0]
+        if not version:
+            pytest.skip("drivetrain_version is not defined. Skipping")
+    else:
+        version = config['drivetrain_version']
     salt_output = local_salt_client.cmd(
         'I@gerrit:client',
         'cmd.run',
