@@ -73,7 +73,7 @@ def test_k8s_get_calico_status(local_salt_client):
 
 def test_k8s_cluster_status(local_salt_client):
     result = local_salt_client.cmd(
-        'kubernetes:pool', 'cmd.run',
+        'kubernetes:master', 'cmd.run',
         ['kubectl cluster-info'],
         expr_form='pillar'
     )
