@@ -1,7 +1,7 @@
 import cStringIO
 import logging
 import select
-from cvp_spt import utils
+import utils
 import paramiko
 
 

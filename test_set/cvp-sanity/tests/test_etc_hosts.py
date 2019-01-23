@@ -1,7 +1,7 @@
 import pytest
 import json
 import os
-from cvp_checks import utils
+import utils
 
 
 def test_etc_hosts(local_salt_client):

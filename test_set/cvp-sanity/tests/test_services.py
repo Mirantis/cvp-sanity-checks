@@ -1,13 +1,13 @@
 import pytest
 import json
 import os
-from cvp_checks import utils
+import utils
 
 # Some nodes can have services that are not applicable for other noder in similar group.
 # For example , there are 3 node in kvm group, but just kvm03 node has srv-volumes-backup.mount service
 # in service.get_all
 #                        NODE NAME          SERVICE_NAME
-inconsistency_rule = {"kvm03": ["srv-volumes-backup.mount"]}
+inconsistency_rule = {"kvm03": ["srv-volumes-backup.mount", "rsync"]}
 
 
 def test_check_services(local_salt_client, nodes_in_group):

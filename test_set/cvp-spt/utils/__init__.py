@@ -5,7 +5,7 @@ import re
 import sys, traceback
 import itertools
 import helpers
-from cvp_spt.utils import os_client
+from utils import os_client
 
 
 class salt_remote:

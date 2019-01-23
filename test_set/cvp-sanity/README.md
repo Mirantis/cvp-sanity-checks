@@ -38,7 +38,7 @@ or
 
 4) Configure:
 ```bash
-   # vim cvp_checks/global_config.yaml
+   # vim cvp-sanity/global_config.yaml
 ```
 SALT credentials are mandatory for tests.
 
@@ -57,9 +57,9 @@ export skipped_nodes='ctl01.example.com,ctl02.example.com'
 
 5) Start tests:
 ```bash
-   # pytest --tb=short -sv cvp_checks/tests/
+   # pytest --tb=short -sv cvp-sanity/tests/
 ```
 or
 ```bash
-   # pytest -sv cvp_checks/tests/ --ignore cvp_checks/tests/test_mtu.py
+   # pytest -sv cvp-sanity/tests/ --ignore cvp-sanity/tests/test_mtu.py
 ```

@@ -28,14 +28,14 @@ RUN set -ex; pushd /etc/apt/ && echo > sources.list && \
 # Due to upstream bug we should use fixed version of pip
     python -m pip install --upgrade 'pip==9.0.3' \
     # initialize cvp sanity test suite
-          && pushd cvp_sanity  \
+          && pushd cvp-sanity  \
           && virtualenv  venv \
           && . venv/bin/activate \
           && pip install -r requirements.txt \
           && deactivate \
           && popd \
     # initialize cvp spt test suite
-          && pushd cvp_spt  \
+          && pushd cvp-spt  \
           && virtualenv  venv \
           && . venv/bin/activate \
           && pip install -r requirements.txt \

@@ -4,8 +4,8 @@ import re
 import os
 import yaml
 import requests
-from cvp_spt import utils
-from cvp_spt.utils import helpers
+import utils
+from utils import helpers
 from netaddr import IPNetwork, IPAddress
 
 

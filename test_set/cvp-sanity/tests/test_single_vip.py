@@ -1,5 +1,5 @@
 import pytest
-from cvp_checks import utils
+import utils
 import os
 from collections import Counter
 

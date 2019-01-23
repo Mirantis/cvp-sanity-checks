@@ -1,4 +1,4 @@
-from cvp_checks import utils
+import utils
 import pytest
 
 

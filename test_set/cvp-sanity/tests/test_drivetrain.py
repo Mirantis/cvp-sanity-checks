@@ -1,6 +1,6 @@
 import jenkins
 from xml.dom import minidom
-from cvp_checks import utils
+import utils
 import json
 import pytest
 import time

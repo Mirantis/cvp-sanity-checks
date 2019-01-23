@@ -2,9 +2,9 @@ import os
 import random
 import time
 import pytest
-from cvp_spt import utils
-from cvp_spt.utils import os_client
-from cvp_spt.utils import ssh
+import utils
+from utils import os_client
+from utils import ssh
 
 
 def test_vm2vm (openstack_clients, pair, os_resources, record_property):

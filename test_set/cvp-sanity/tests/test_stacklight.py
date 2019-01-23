@@ -2,7 +2,7 @@ import json
 import requests
 import datetime
 import pytest
-from cvp_checks import utils
+import utils
 
 
 @pytest.mark.usefixtures('check_kibana')

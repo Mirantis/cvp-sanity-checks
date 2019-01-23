@@ -1,4 +1,4 @@
-from cvp_checks import utils
+import utils
 
 
 def test_checking_rabbitmq_cluster(local_salt_client):

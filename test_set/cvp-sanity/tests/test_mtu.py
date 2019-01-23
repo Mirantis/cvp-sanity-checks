@@ -1,6 +1,6 @@
 import pytest
 import json
-from cvp_checks import utils
+import utils
 import os
 
 

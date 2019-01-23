@@ -1,7 +1,7 @@
 import pytest
 import time
 import subprocess
-import cvp_spt.utils as utils
+import  utils
 
 
 @pytest.fixture

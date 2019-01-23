@@ -1,5 +1,5 @@
 import pytest
-from cvp_checks import utils
+import utils
 
 
 def test_list_of_repo_on_nodes(local_salt_client, nodes_in_group):

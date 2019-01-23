@@ -1,8 +1,8 @@
 import pytest
-import cvp_spt.utils as utils
+import utils
 import random
 import time
-from cvp_spt.utils import os_client
+from utils import os_client
 
 @pytest.fixture(scope='session')
 def local_salt_client():

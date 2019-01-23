@@ -1,6 +1,6 @@
 import pytest
 import atexit
-import cvp_checks.utils as utils
+import utils
 
 
 @pytest.fixture(scope='session')

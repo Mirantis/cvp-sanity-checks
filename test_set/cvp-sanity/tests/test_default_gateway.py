@@ -1,7 +1,7 @@
 import json
 import pytest
 import os
-from cvp_checks import utils
+import utils
 
 
 def test_check_default_gateways(local_salt_client, nodes_in_group):
