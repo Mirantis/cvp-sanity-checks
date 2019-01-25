@@ -71,6 +71,16 @@ test_duplicate_ips:
   {
     "skipped_ifaces": ["lo", "virbr0", "docker_gwbridge", "docker0"]}
 
+# packages test 'test_packages_are_latest' setting
+# this can skip scecial packages
+# True value for 'skip_test' will skip this test. Set False to run the test.
+# TODO: remove default False value when prod env is fixed
+test_packages:
+  { # "skipped_packages": ["update-notifier-common", "wget"]
+    "skipped_packages": [""],
+    "skip_test": True
+  }
+
 # specify what mcp version (tag) is deployed
 drivetrain_version: ''
 

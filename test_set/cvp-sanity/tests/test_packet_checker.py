@@ -1,6 +1,8 @@
 import pytest
 import json
 
+import utils
+
 
 def test_check_package_versions(local_salt_client, nodes_in_group):
     output = local_salt_client.cmd("L@"+','.join(nodes_in_group),
@@ -38,6 +40,27 @@ def test_check_package_versions(local_salt_client, nodes_in_group):
     assert len(pkts_data) <= 1, \
         "Several problems found: {0}".format(
         json.dumps(pkts_data, indent=4))
+
+
+def test_packages_are_latest(local_salt_client, nodes_in_group):
+    config = utils.get_configuration()
+    skip = config.get("test_packages")["skip_test"]
+    if skip:
+        pytest.skip("Test for the latest packages is disabled")
+    skipped_pkg = config.get("test_packages")["skipped_packages"]
+    info_salt = local_salt_client.cmd(
+        'L@' + ','.join(nodes_in_group),
+        'cmd.run', ['apt list --upgradable 2>/dev/null | grep -v Listing'],
+        expr_form='compound')
+    for node in nodes_in_group:
+        result = []
+        if info_salt[node]:
+            upg_list = info_salt[node].split('\n')
+            for i in upg_list:
+                if i.split('/')[0] not in skipped_pkg:
+                    result.append(i)
+        assert not result, "Please check not latest packages at {}:\n{}".format(
+            node, "\n".join(result))
 
 
 def test_check_module_versions(local_salt_client, nodes_in_group):
