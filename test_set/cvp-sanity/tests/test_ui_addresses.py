@@ -24,53 +24,134 @@ def test_ui_horizon(local_salt_client):
 
 
 @pytest.mark.usefixtures('check_kibana')
-def test_ui_kibana(local_salt_client):
+def test_internal_ui_kibana(local_salt_client):
     IP = utils.get_monitoring_ip('stacklight_log_address')
+    protocol = 'http'
+    port = '5601'
+    url = "{}://{}:{}".format(protocol, IP, port)
     result = local_salt_client.cmd(
         'keystone:server',
         'cmd.run',
-        ['curl http://{}:5601/app/kibana 2>&1 | \
-         grep loading'.format(IP)],
+        ['curl {}/app/kibana 2>&1 | \
+         grep loading'.format(url)],
         expr_form='pillar')
     assert len(result[result.keys()[0]]) != 0, \
-        'Kibana login page is not reachable on {} from ctl nodes'.format(IP)
+        'Internal Kibana login page is not reachable on {} ' \
+        'from ctl nodes'.format(url)
+
+
+@pytest.mark.usefixtures('check_kibana')
+def test_public_ui_kibana(local_salt_client):
+    IP = utils.get_monitoring_ip('openstack_proxy_address')
+    protocol = 'https'
+    port = '5601'
+    url = "{}://{}:{}".format(protocol, IP, port)
+    result = local_salt_client.cmd(
+        'keystone:server',
+        'cmd.run',
+        ['curl {}/app/kibana 2>&1 | \
+         grep loading'.format(url)],
+        expr_form='pillar')
+    assert len(result[result.keys()[0]]) != 0, \
+        'Public Kibana login page is not reachable on {} ' \
+        'from ctl nodes'.format(url)
 
 
 @pytest.mark.usefixtures('check_prometheus')
-def test_ui_prometheus(local_salt_client):
+def test_internal_ui_prometheus(local_salt_client):
     IP = utils.get_monitoring_ip('stacklight_monitor_address')
+    protocol = 'http'
+    port = '15010'
+    url = "{}://{}:{}".format(protocol, IP, port)
     result = local_salt_client.cmd(
         'keystone:server',
         'cmd.run',
-        ['curl http://{}:15010/graph 2>&1 | \
-         grep Prometheus'.format(IP)],
+        ['curl {}/graph 2>&1 | \
+         grep Prometheus'.format(url)],
         expr_form='pillar')
     assert len(result[result.keys()[0]]) != 0, \
-        'Prometheus page is not reachable on {} from ctl nodes'.format(IP)
+        'Internal Prometheus page is not reachable on {} ' \
+        'from ctl nodes'.format(url)
 
 
 @pytest.mark.usefixtures('check_prometheus')
-def test_ui_alert_manager(local_salt_client):
-    IP = utils.get_monitoring_ip('stacklight_monitor_address')
+def test_public_ui_prometheus(local_salt_client):
+    IP = utils.get_monitoring_ip('openstack_proxy_address')
+    protocol = 'https'
+    port = '15010'
+    url = "{}://{}:{}".format(protocol, IP, port)
     result = local_salt_client.cmd(
         'keystone:server',
         'cmd.run',
-        ['curl -s http://{}:15011/ | grep Alertmanager'.format(IP)],
+        ['curl {}/graph 2>&1 | \
+         grep Prometheus'.format(url)],
         expr_form='pillar')
     assert len(result[result.keys()[0]]) != 0, \
-        'AlertManager page is not reachable on {} from ctl nodes'.format(IP)
+        'Public Prometheus page is not reachable on {} ' \
+        'from ctl nodes'.format(url)
+
+
+@pytest.mark.usefixtures('check_prometheus')
+def test_internal_ui_alert_manager(local_salt_client):
+    IP = utils.get_monitoring_ip('stacklight_monitor_address')
+    protocol = 'http'
+    port = '15011'
+    url = "{}://{}:{}".format(protocol, IP, port)
+    result = local_salt_client.cmd(
+        'keystone:server',
+        'cmd.run',
+        ['curl -s {}/ | grep Alertmanager'.format(url)],
+        expr_form='pillar')
+    assert len(result[result.keys()[0]]) != 0, \
+        'Internal AlertManager page is not reachable on {} ' \
+        'from ctl nodes'.format(url)
+
+
+@pytest.mark.usefixtures('check_prometheus')
+def test_public_ui_alert_manager(local_salt_client):
+    IP = utils.get_monitoring_ip('openstack_proxy_address')
+    protocol = 'https'
+    port = '15011'
+    url = "{}://{}:{}".format(protocol, IP, port)
+    result = local_salt_client.cmd(
+        'keystone:server',
+        'cmd.run',
+        ['curl -s {}/ | grep Alertmanager'.format(url)],
+        expr_form='pillar')
+    assert len(result[result.keys()[0]]) != 0, \
+        'Public AlertManager page is not reachable on {} ' \
+        'from ctl nodes'.format(url)
 
 
 @pytest.mark.usefixtures('check_grafana')
-def test_ui_grafana(local_salt_client):
+def test_internal_ui_grafana(local_salt_client):
     IP = utils.get_monitoring_ip('stacklight_monitor_address')
+    protocol = 'http'
+    port = '15013'
+    url = "{}://{}:{}".format(protocol, IP, port)
     result = local_salt_client.cmd(
         'keystone:server',
         'cmd.run',
-        ['curl http://{}:15013/login 2>&1 | grep Grafana'.format(IP)],
+        ['curl {}/login 2>&1 | grep Grafana'.format(url)],
         expr_form='pillar')
     assert len(result[result.keys()[0]]) != 0, \
-        'Grafana page is not reachable on {} from ctl nodes'.format(IP)
+        'Internal Grafana page is not reachable on {} ' \
+        'from ctl nodes'.format(url)
+
+
+@pytest.mark.usefixtures('check_grafana')
+def test_public_ui_grafana(local_salt_client):
+    IP = utils.get_monitoring_ip('openstack_proxy_address')
+    protocol = 'https'
+    port = '8084'
+    url = "{}://{}:{}".format(protocol, IP, port)
+    result = local_salt_client.cmd(
+        'keystone:server',
+        'cmd.run',
+        ['curl {}/login 2>&1 | grep Grafana'.format(url)],
+        expr_form='pillar')
+    assert len(result[result.keys()[0]]) != 0, \
+        'Public Grafana page is not reachable on {} from ctl nodes'.format(url)
 
 
 @pytest.mark.usefixtures('check_alerta')
