@@ -69,7 +69,7 @@ def test_elasticsearch_node_count(local_salt_client):
     proxies = {"http": None, "https": None}
     data = ('{"size": 0, "aggs": '
             '{"uniq_hostname": '
-            '{"terms": {"size": 500, '
+            '{"terms": {"size": 1000, '
             '"field": "Hostname.keyword"}}}}')
     response = requests.post(
         'http://{0}:9200/log-{1}/_search?pretty'.format(IP, today),
