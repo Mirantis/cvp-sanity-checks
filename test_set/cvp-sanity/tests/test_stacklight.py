@@ -121,13 +121,13 @@ def test_stacklight_services_replicas(local_salt_client):
 
 
 @pytest.mark.usefixtures('check_prometheus')
-def test_prometheus_alert_count(local_salt_client):
+def test_prometheus_alert_count(local_salt_client, ctl_nodes_pillar):
     IP = utils.get_monitoring_ip('cluster_public_host')
     # keystone:server can return 3 nodes instead of 1
     # this will be fixed later
     # TODO
     nodes_info = local_salt_client.cmd(
-        'keystone:server',
+        ctl_nodes_pillar,
         'cmd.run',
         ['curl -s http://{}:15010/alerts | grep icon-chevron-down | '
          'grep -v "0 active"'.format(IP)],
