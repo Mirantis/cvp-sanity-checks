@@ -140,3 +140,39 @@ def test_check_k8s_image_availability(local_salt_client):
         print '{} is AVAILABLE'.format(hostname)
     else:
         print '{} IS NOT AVAILABLE'.format(hostname)
+
+
+def test_k8s_dashboard_available(local_salt_client):
+    result = local_salt_client.cmd(
+        'etcd:server', 'cmd.run',
+        ['kubectl get svc -n kube-system'],
+        expr_form='pillar'
+    )
+    if not result:
+        pytest.skip("k8s is not found on this environment")
+
+    # service name 'kubernetes-dashboard' is hardcoded in kubernetes formula
+    dashboard_enabled = local_salt_client.cmd(
+        'etcd:server', 'pillar.get',
+        ['kubernetes:common:addons:dashboard:enabled'],
+        expr_form='pillar'
+    ).values()[0]
+    if not dashboard_enabled:
+        pytest.skip("Kubernetes dashboard is not enabled in the cluster.")
+
+    external_ip = local_salt_client.cmd(
+        'etcd:server', 'pillar.get',
+        ['kubernetes:common:addons:dashboard:public_ip'],
+        expr_form='pillar'
+    ).values()[0]
+
+    # dashboard port 8443 is hardcoded in kubernetes formula
+    url = "https://{}:8443".format(external_ip)
+    check = local_salt_client.cmd(
+        'etcd:server', 'cmd.run',
+        ['curl {} 2>&1 | grep kubernetesDashboard'.format(url)],
+        expr_form='pillar'
+    )
+    assert len(check.values()[0]) != 0, \
+        'Kubernetes dashboard is not reachable on {} ' \
+        'from ctl nodes'.format(url)
