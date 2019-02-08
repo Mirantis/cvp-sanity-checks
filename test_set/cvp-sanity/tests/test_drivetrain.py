@@ -240,20 +240,27 @@ def test_drivetrain_jenkins_job(local_salt_client):
         '''Test job '{0}' build was not successfull or timeout is too small
          '''.format(jenkins_test_job)
 
+
 def test_drivetrain_services_replicas(local_salt_client):
-    salt_output = local_salt_client.cmd(
-        'I@gerrit:client',
-        'cmd.run',
-        ['docker service ls'],
-        expr_form='compound')
-    wrong_items = []
-    for line in salt_output[salt_output.keys()[0]].split('\n'):
-        if line[line.find('/') - 1] != line[line.find('/') + 1] \
-           and 'replicated' in line:
-            wrong_items.append(line)
-    assert len(wrong_items) == 0, \
-        '''Some DriveTrain services doesn't have expected number of replicas:
-              {}'''.format(json.dumps(wrong_items, indent=4))
+    # TODO: replace with rerunfalures plugin
+    for _ in range(4):
+        salt_output = local_salt_client.cmd(
+            'I@gerrit:client',
+            'cmd.run',
+            ['docker service ls'],
+            expr_form='compound')
+        wrong_items = []
+        for line in salt_output[salt_output.keys()[0]].split('\n'):
+            if line[line.find('/') - 1] != line[line.find('/') + 1] \
+               and 'replicated' in line:
+                wrong_items.append(line)
+        if len(wrong_items) == 0:
+            break
+        else:
+            print('''Some DriveTrain services doesn't have expected number of replicas:
+                  {}\n'''.format(json.dumps(wrong_items, indent=4)))
+            time.sleep(5)
+        assert len(wrong_items) == 0
 
 
 def test_drivetrain_components_and_versions(local_salt_client):
