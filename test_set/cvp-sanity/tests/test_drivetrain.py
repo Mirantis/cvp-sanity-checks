@@ -303,28 +303,42 @@ def test_drivetrain_components_and_versions(local_salt_client):
 
 
 def test_jenkins_jobs_branch(local_salt_client):
+    excludes = ['upgrade-mcp-release', 'deploy-update-salt']
+
     config = utils.get_configuration()
-    expected_version = config['drivetrain_version'] or []
-    if not expected_version or expected_version == '':
+    drivetrain_version = config.get('drivetrain_version', '')
+    if not drivetrain_version:
         pytest.skip("drivetrain_version is not defined. Skipping")
     jenkins_password = get_password(local_salt_client,'jenkins:client')
     version_mismatch = []
     server = join_to_jenkins(local_salt_client,'admin',jenkins_password)
     for job_instance in server.get_jobs():
         job_name = job_instance.get('name')
+        if job_name in excludes:
+            continue
+
         job_config = server.get_job_config(job_name)
         xml_data = minidom.parseString(job_config)
         BranchSpec = xml_data.getElementsByTagName('hudson.plugins.git.BranchSpec')
-        #We use master branch for pipeline-library in case of 'testing,stable,nighlty' versions
-        if expected_version in ['testing','nightly','stable']:
+
+        # We use master branch for pipeline-library in case of 'testing,stable,nighlty' versions
+        # Leave proposed version as is
+        # in other cases we get release/{drivetrain_version}  (e.g release/2019.2.0)
+        if drivetrain_version in ['testing','nightly','stable']:
             expected_version = 'master'
-        if BranchSpec:
-            actual_version = BranchSpec[0].getElementsByTagName('name')[0].childNodes[0].data
-            if ( actual_version != expected_version ) and ( job_name not in ['upgrade-mcp-release'] ) :
-                version_mismatch.append("Job {0} has {1} branch."
-                                        "Expected {2}".format(job_name,
-                                                              actual_version,
-                                                              expected_version))
+        else:
+            expected_version = drivetrain_version
+
+        if not BranchSpec:
+            print("No BranchSpec has found for {} job".format(job_name))
+            continue
+
+        actual_version = BranchSpec[0].getElementsByTagName('name')[0].childNodes[0].data
+        if (actual_version not in [expected_version, "release/{}".format(drivetrain_version)]):
+            version_mismatch.append("Job {0} has {1} branch."
+                                    "Expected {2}".format(job_name,
+                                                          actual_version,
+                                                          expected_version))
     assert len(version_mismatch) == 0, \
         '''Some DriveTrain jobs have version/branch mismatch:
               {}'''.format(json.dumps(version_mismatch, indent=4))
