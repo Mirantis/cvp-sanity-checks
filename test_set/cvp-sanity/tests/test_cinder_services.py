@@ -1,6 +1,7 @@
 import pytest
 
 
+@pytest.mark.xfail
 def test_cinder_services(local_salt_client):
     cinder_backends_info = local_salt_client.cmd(
         'cinder:controller',
