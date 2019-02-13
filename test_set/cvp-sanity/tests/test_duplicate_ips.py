@@ -15,9 +15,7 @@ def get_duplicate_ifaces(nodes, ips):
     return dup_ifaces
 
 
-@pytest.mark.xfail
 def test_duplicate_ips(local_salt_client):
-    # It doesn't work for test_drivetrain job
     active_nodes = utils.get_active_nodes()
 
     testname = os.path.basename(__file__).split('.')[0]

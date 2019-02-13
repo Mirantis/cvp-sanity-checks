@@ -11,6 +11,7 @@ import git
 import ldap
 import ldap.modlist as modlist
 
+
 def join_to_gerrit(local_salt_client, gerrit_user, gerrit_password):
     gerrit_port = local_salt_client.cmd(
         'I@gerrit:client and not I@salt:master',
@@ -27,6 +28,7 @@ def join_to_gerrit(local_salt_client, gerrit_user, gerrit_password):
     rest = GerritRestAPI(url=url, auth=auth)
     return rest
 
+
 def join_to_jenkins(local_salt_client, jenkins_user, jenkins_password):
     jenkins_port = local_salt_client.cmd(
         'I@jenkins:client and not I@salt:master',
@@ -42,6 +44,7 @@ def join_to_jenkins(local_salt_client, jenkins_user, jenkins_password):
     server = jenkins.Jenkins(jenkins_url, username=jenkins_user, password=jenkins_password)
     return server
 
+
 def get_password(local_salt_client,service):
     password = local_salt_client.cmd(
         service,
@@ -49,6 +52,7 @@ def get_password(local_salt_client,service):
         ['_param:openldap_admin_password'],
         expr_form='pillar').values()[0]
     return password
+
 
 def test_drivetrain_gerrit(local_salt_client):
     gerrit_password = get_password(local_salt_client,'gerrit:client')
@@ -108,6 +112,7 @@ def test_drivetrain_gerrit(local_salt_client):
         server.post("/projects/"+test_proj_name+"/deleteproject~delete")
     assert gerrit_error == '',\
         'Something is wrong with Gerrit'.format(gerrit_error)
+
 
 def test_drivetrain_openldap(local_salt_client):
     '''Create a test user 'DT_test_user' in openldap,
@@ -207,6 +212,7 @@ def test_drivetrain_openldap(local_salt_client):
     assert ldap_result !=[], \
         '''Test user was not found'''
 
+
 def test_drivetrain_jenkins_job(local_salt_client):
     jenkins_password = get_password(local_salt_client,'jenkins:client')
     server = join_to_jenkins(local_salt_client,'admin',jenkins_password)
@@ -266,7 +272,7 @@ def test_drivetrain_services_replicas(local_salt_client):
 def test_drivetrain_components_and_versions(local_salt_client):
     config = utils.get_configuration()
     if not config['drivetrain_version']:
-        version = \
+        expected_version = \
             local_salt_client.cmd(
                 'I@salt:master',
                 'pillar.get',
@@ -277,34 +283,34 @@ def test_drivetrain_components_and_versions(local_salt_client):
                 'pillar.get',
                 ['_param:apt_mk_version'],
                 expr_form='compound').values()[0]
-        if not version:
+        if not expected_version:
             pytest.skip("drivetrain_version is not defined. Skipping")
     else:
-        version = config['drivetrain_version']
-    salt_output = local_salt_client.cmd(
-        'I@gerrit:client',
-        'cmd.run',
-        ['docker service ls'],
-        expr_form='compound')
-    #  'ldap_server' removed because it is an external component now v 1.1.8
-    not_found_services = ['gerrit_db', 'gerrit_server', 'jenkins_master',
-                          'jenkins_slave01', 'jenkins_slave02',
-                          'jenkins_slave03', 'ldap_admin', 'docker_registry',
-                          'docker_visualizer']
-    version_mismatch = []
-    for line in salt_output[salt_output.keys()[0]].split('\n'):
-        for service in not_found_services:
-            if service in line:
-                not_found_services.remove(service)
-                if version != line.split()[4].split(':')[1]:
-                    version_mismatch.append("{0}: expected "
-                        "version is {1}, actual - {2}".format(service,version,
-                                                              line.split()[4].split(':')[1]))
-                continue
-    assert len(not_found_services) == 0, \
-        '''Some DriveTrain components are not found:
-              {}'''.format(json.dumps(not_found_services, indent=4))
-    assert len(version_mismatch) == 0, \
+        expected_version = config['drivetrain_version']
+    table_with_docker_services = local_salt_client.cmd('I@gerrit:client',
+                                                       'cmd.run',
+                                                       ['docker service ls --format "{{.Image}}"'],
+                                                       expr_form='compound')
+    table_from_pillar = local_salt_client.cmd('I@gerrit:client',
+                                              'pillar.get',
+                                              ['docker:client:images'],
+                                              expr_form='compound')
+
+    expected_images = table_from_pillar[table_from_pillar.keys()[0]]
+    actual_images = table_with_docker_services[table_with_docker_services.keys()[0]].split('\n')
+
+    # ---------------- Check that all docker services are found regarding the 'pillar.get docker:client:images' ----
+    not_found_services = list(set(expected_images) - set(actual_images))
+    assert not_found_services.__len__() == 0, \
+        ''' Some DriveTrain components are not found: {}'''.format(json.dumps(not_found_services, indent=4))
+
+    # ---------- Check that all docker services has label that equals to mcp_version (except of external images) ----
+    version_mismatch = [
+        "{image}: expected version - {expected_version}, actual - {version}".format(version=image.split(":")[-1], **locals())
+        for image in actual_images
+        if image.split(":")[-1] != expected_version and "mirantis/external" not in image]
+
+    assert version_mismatch.__len__() == 0, \
         '''Version mismatch found:
               {}'''.format(json.dumps(version_mismatch, indent=4))
 
@@ -316,9 +322,9 @@ def test_jenkins_jobs_branch(local_salt_client):
     drivetrain_version = config.get('drivetrain_version', '')
     if not drivetrain_version:
         pytest.skip("drivetrain_version is not defined. Skipping")
-    jenkins_password = get_password(local_salt_client,'jenkins:client')
+    jenkins_password = get_password(local_salt_client, 'jenkins:client')
     version_mismatch = []
-    server = join_to_jenkins(local_salt_client,'admin',jenkins_password)
+    server = join_to_jenkins(local_salt_client, 'admin', jenkins_password)
     for job_instance in server.get_jobs():
         job_name = job_instance.get('name')
         if job_name in excludes:
