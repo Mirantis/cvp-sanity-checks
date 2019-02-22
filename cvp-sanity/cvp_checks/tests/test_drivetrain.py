@@ -258,59 +258,87 @@ def test_drivetrain_services_replicas(local_salt_client):
 
 def test_drivetrain_components_and_versions(local_salt_client):
     config = utils.get_configuration()
-    version = config['drivetrain_version'] or []
-    if not version or version == '':
-        pytest.skip("drivetrain_version is not defined. Skipping")
-    salt_output = local_salt_client.cmd(
-        'I@gerrit:client',
-        'cmd.run',
-        ['docker service ls'],
-        expr_form='compound')
-    #  'ldap_server' removed because it is an external component now v 1.1.8
-    not_found_services = ['gerrit_db', 'gerrit_server', 'jenkins_master',
-                          'jenkins_slave01', 'jenkins_slave02',
-                          'jenkins_slave03', 'ldap_admin']
-    version_mismatch = []
-    for line in salt_output[salt_output.keys()[0]].split('\n'):
-        for service in not_found_services:
-            if service in line:
-                not_found_services.remove(service)
-                if version != line.split()[4].split(':')[1]:
-                    version_mismatch.append("{0}: expected "
-                        "version is {1}, actual - {2}".format(service,version,
-                                                              line.split()[4].split(':')[1]))
-                continue
-    assert len(not_found_services) == 0, \
-        '''Some DriveTrain components are not found:
-              {}'''.format(json.dumps(not_found_services, indent=4))
-    assert len(version_mismatch) == 0, \
+    if not config['drivetrain_version']:
+        expected_version = \
+            local_salt_client.cmd(
+                'I@salt:master',
+                'pillar.get',
+                ['_param:mcp_version'],
+                expr_form='compound').values()[0] or \
+            local_salt_client.cmd(
+                'I@salt:master',
+                'pillar.get',
+                ['_param:apt_mk_version'],
+                expr_form='compound').values()[0]
+        if not expected_version:
+            pytest.skip("drivetrain_version is not defined. Skipping")
+    else:
+        expected_version = config['drivetrain_version']
+    table_with_docker_services = local_salt_client.cmd('I@gerrit:client',
+                                                       'cmd.run',
+                                                       ['docker service ls --format "{{.Image}}"'],
+                                                       expr_form='compound')
+    table_from_pillar = local_salt_client.cmd('I@gerrit:client',
+                                              'pillar.get',
+                                              ['docker:client:images'],
+                                              expr_form='compound')
+
+    expected_images = table_from_pillar[table_from_pillar.keys()[0]]
+    actual_images = table_with_docker_services[table_with_docker_services.keys()[0]].split('\n')
+
+    # ---------------- Check that all docker services are found regarding the 'pillar.get docker:client:images' ----
+    not_found_services = list(set(expected_images) - set(actual_images))
+    assert not_found_services.__len__() == 0, \
+        ''' Some DriveTrain components are not found: {}'''.format(json.dumps(not_found_services, indent=4))
+
+    # ---------- Check that all docker services has label that equals to mcp_version (except of external images) ----
+    version_mismatch = [
+        "{image}: expected version - {expected_version}, actual - {version}".format(version=image.split(":")[-1], **locals())
+        for image in actual_images
+        if image.split(":")[-1] != expected_version and "mirantis/external" not in image]
+
+    assert version_mismatch.__len__() == 0, \
         '''Version mismatch found:
               {}'''.format(json.dumps(version_mismatch, indent=4))
 
 
 def test_jenkins_jobs_branch(local_salt_client):
+    excludes = ['upgrade-mcp-release', 'deploy-update-salt']
+
     config = utils.get_configuration()
-    expected_version = config['drivetrain_version'] or []
-    if not expected_version or expected_version == '':
+    drivetrain_version = config.get('drivetrain_version', '')
+    if not drivetrain_version:
         pytest.skip("drivetrain_version is not defined. Skipping")
-    jenkins_password = get_password(local_salt_client,'jenkins:client')
+    jenkins_password = get_password(local_salt_client, 'jenkins:client')
     version_mismatch = []
-    server = join_to_jenkins(local_salt_client,'admin',jenkins_password)
+    server = join_to_jenkins(local_salt_client, 'admin', jenkins_password)
     for job_instance in server.get_jobs():
         job_name = job_instance.get('name')
+        if job_name in excludes:
+            continue
+
         job_config = server.get_job_config(job_name)
         xml_data = minidom.parseString(job_config)
         BranchSpec = xml_data.getElementsByTagName('hudson.plugins.git.BranchSpec')
-        #We use master branch for pipeline-library in case of 'testing,stable,nighlty' versions
-        if expected_version in ['testing','nightly','stable']:
+
+        # We use master branch for pipeline-library in case of 'testing,stable,nighlty' versions
+        # Leave proposed version as is
+        # in other cases we get release/{drivetrain_version}  (e.g release/2019.2.0)
+        if drivetrain_version in ['testing','nightly','stable']:
             expected_version = 'master'
-        if BranchSpec:
-            actual_version = BranchSpec[0].getElementsByTagName('name')[0].childNodes[0].data
-            if ( actual_version != expected_version ) and ( job_name not in ['cvp-func','cvp-ha','cvp-perf','upgrade-mcp-release'] ) :
-                version_mismatch.append("Job {0} has {1} branch."
-                                        "Expected {2}".format(job_name,
-                                                              actual_version,
-                                                              expected_version))
+        else:
+            expected_version = drivetrain_version
+
+        if not BranchSpec:
+            print("No BranchSpec has found for {} job".format(job_name))
+            continue
+
+        actual_version = BranchSpec[0].getElementsByTagName('name')[0].childNodes[0].data
+        if (actual_version not in [expected_version, "release/{}".format(drivetrain_version)]):
+            version_mismatch.append("Job {0} has {1} branch."
+                                    "Expected {2}".format(job_name,
+                                                          actual_version,
+                                                          expected_version))
     assert len(version_mismatch) == 0, \
         '''Some DriveTrain jobs have version/branch mismatch:
               {}'''.format(json.dumps(version_mismatch, indent=4))
