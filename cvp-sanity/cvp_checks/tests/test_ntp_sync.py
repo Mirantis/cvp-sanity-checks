@@ -1,28 +1,25 @@
 from cvp_checks import utils
-import os
+import json
 
 
 def test_ntp_sync(local_salt_client):
-    testname = os.path.basename(__file__).split('.')[0]
-    active_nodes = utils.get_active_nodes(os.path.basename(__file__))
+    """Test checks that system time is the same across all nodes"""
+
+    active_nodes = utils.get_active_nodes()
     config = utils.get_configuration()
-    fail = {}
-    saltmaster_time = int(local_salt_client.cmd(
-        'salt:master',
-        'cmd.run',
-        ['date +%s'],
-        expr_form='pillar').values()[0])
     nodes_time = local_salt_client.cmd(
         utils.list_to_target_string(active_nodes, 'or'),
         'cmd.run',
         ['date +%s'],
         expr_form='compound')
-    diff = config.get(testname)["time_deviation"] or 30
+    result = {}
     for node, time in nodes_time.iteritems():
-        if (int(time) - saltmaster_time) > diff or \
-                (int(time) - saltmaster_time) < -diff:
-            fail[node] = time
-
-    assert not fail, 'SaltMaster time: {}\n' \
-                     'Nodes with time mismatch:\n {}'.format(saltmaster_time,
-                                                             fail)
+        if node in config.get("ntp_skipped_nodes"):
+            continue
+        if time in result:
+            result[time].append(node)
+            result[time].sort()
+        else:
+            result[time] = [node]
+    assert len(result) <= 1, 'Not all nodes have the same time:\n {}'.format(
+                             json.dumps(result, indent=4))

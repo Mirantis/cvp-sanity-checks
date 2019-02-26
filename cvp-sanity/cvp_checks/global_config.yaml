@@ -74,6 +74,4 @@ jenkins_cvp_job: 'cvp-sanity'
 
 # ntp test setting
 # this test may skip specific node (use fqdn)
-test_ntp_sync:
-  { #"skipped_nodes": [""],
-    "time_deviation": 1}
+ntp_skipped_nodes: [""]
