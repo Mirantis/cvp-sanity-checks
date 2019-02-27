@@ -56,7 +56,9 @@ def test_mtu(local_salt_client, nodes_in_group):
                 diff.append(total[node][interf])
                 row.append("{}: {}".format(node, total[node][interf]))
             else:
-                row.append("{}: No interface".format(node))
+                # skip node with no virbr0 or virbr0-nic interfaces
+                if interf not in ['virbr0', 'virbr0-nic']:
+                    row.append("{}: No interface".format(node))
         if diff.count(diff[0]) < len(nodes):
             row.sort()
             row.insert(0, interf)
