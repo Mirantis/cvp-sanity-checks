@@ -16,6 +16,50 @@ def nodes_in_group(request):
 
 
 @pytest.fixture(scope='session')
+def ctl_nodes_pillar(local_salt_client):
+    '''Return controller node pillars (OS or k8s ctls).
+       This will help to identify nodes to use for UI curl tests.
+       If no platform is installed (no OS or k8s) we need to skip
+       the test (product team use case).
+    '''
+    salt_output = local_salt_client.cmd(
+        'keystone:server',
+        'test.ping',
+        expr_form='pillar')
+    if salt_output:
+        return "keystone:server"
+    else:
+        salt_output = local_salt_client.cmd(
+            'etcd:server',
+            'test.ping',
+            expr_form='pillar')
+        return "etcd:server" if salt_output else pytest.skip("Neither \
+            Openstack nor k8s is found. Skipping test")
+
+
+@pytest.fixture(scope='session')
+def check_openstack(local_salt_client):
+    salt_output = local_salt_client.cmd(
+        'keystone:server',
+        'test.ping',
+        expr_form='pillar')
+    if not salt_output:
+        pytest.skip("Openstack not found or keystone:server pillar \
+          are not found on this environment.")
+
+
+@pytest.fixture(scope='session')
+def check_drivetrain(local_salt_client):
+    salt_output = local_salt_client.cmd(
+        'I@jenkins:client and not I@salt:master',
+        'test.ping',
+        expr_form='compound')
+    if not salt_output:
+        pytest.skip("Drivetrain service or jenkins:client pillar \
+          are not found on this environment.")
+
+
+@pytest.fixture(scope='session')
 def check_prometheus(local_salt_client):
     salt_output = local_salt_client.cmd(
         'prometheus:server',
