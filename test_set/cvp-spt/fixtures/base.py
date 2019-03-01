@@ -56,8 +56,7 @@ def os_resources(openstack_clients):
 
     os_images_list = [image.id for image in openstack_clients.image.images.list(filters={'name': image_name})]
     if os_images_list.__len__() == 0:
-        print "No images with name {}. This name can be redefined with 'image_name' env var ".format(image_name)
-        exit()
+        pytest.skip("No images with name {}. This name can be redefined with 'image_name' env var ".format(image_name))
 
     os_resource['image_id'] = str(os_images_list[0])
 

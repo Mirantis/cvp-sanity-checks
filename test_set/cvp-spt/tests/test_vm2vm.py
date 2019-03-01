@@ -7,7 +7,7 @@ from utils import os_client
 from utils import ssh
 
 
-def test_vm2vm (openstack_clients, pair, os_resources, record_property):
+def test_vm2vm(openstack_clients, pair, os_resources, record_property):
     os_actions = os_client.OSCliActions(openstack_clients)
     config = utils.get_configuration()
     timeout = int(config.get('nova_timeout', 30))
@@ -52,7 +52,7 @@ def test_vm2vm (openstack_clients, pair, os_resources, record_property):
             fips.append(fip.id)
             status = openstack_clients.compute.servers.get(vms[i]).status
             if status != 'ACTIVE':
-                print "VM #{0} {1} is not ready. Status {2}".format(i,vms[i].id,status)
+                print("VM #{0} {1} is not ready. Status {2}".format(i,vms[i].id,status))
                 time.sleep(timeout)
                 status = openstack_clients.compute.servers.get(vms[i]).status
             if status != 'ACTIVE':
@@ -63,39 +63,44 @@ def test_vm2vm (openstack_clients, pair, os_resources, record_property):
             try:
                 ssh.prepare_iperf(fip.ip,private_key=os_resources['keypair'].private_key)
             except Exception as e:
-                print e
-                print "ssh.prepare_iperf was not successful, retry after {} sec".format(timeout)
+                print(e)
+                print("ssh.prepare_iperf was not successful, retry after {} sec".format(timeout))
                 time.sleep(timeout)
                 ssh.prepare_iperf(fip.ip,private_key=os_resources['keypair'].private_key)
-            vm_info.append({'vm': vms[i], 'fip': fip.ip, 'private_address': private_address})   
-        
+            vm_info.append({'vm': vms[i], 'fip': fip.ip, 'private_address': private_address})
+
         transport1 = ssh.SSHTransport(vm_info[0]['fip'], 'ubuntu', password='dd', private_key=os_resources['keypair'].private_key)
 
         result1 = transport1.exec_command('iperf -c {} -t 60 | tail -n 1'.format(vm_info[1]['private_address']))
-        print ' '.join(result1.split()[-2::])
+        print(' '.join(result1.split()[-2::]))
+
         record_property("same {0}-{1}".format(zone1[0],zone2[0]), ' '.join(result1.split()[-2::]))
         result2 = transport1.exec_command('iperf -c {} -t 60 | tail -n 1'.format(vm_info[2]['private_address']))
-        print ' '.join(result2.split()[-2::])
+        print(' '.join(result2.split()[-2::]))
+
         record_property("diff host {0}-{1}".format(zone1[0],zone2[0]), ' '.join(result2.split()[-2::]))
         result3 = transport1.exec_command('iperf -c {} -P 10 -t 60 | tail -n 1'.format(vm_info[2]['private_address']))
-        print ' '.join(result3.split()[-2::])
+        print(' '.join(result3.split()[-2::]))
+
         record_property("dif host 10 threads {0}-{1}".format(zone1[0],zone2[0]), ' '.join(result3.split()[-2::]))
         result4 = transport1.exec_command('iperf -c {} -t 60 | tail -n 1'.format(vm_info[2]['fip']))
-        print ' '.join(result4.split()[-2::])
+        print(' '.join(result4.split()[-2::]))
+
         record_property("diff host fip {0}-{1}".format(zone1[0],zone2[0]), ' '.join(result4.split()[-2::]))
         result5 = transport1.exec_command('iperf -c {} -t 60 | tail -n 1'.format(vm_info[3]['private_address']))
-        print ' '.join(result5.split()[-2::])
+        print(' '.join(result5.split()[-2::]))
+
         record_property("diff host, diff net {0}-{1}".format(zone1[0],zone2[0]), ' '.join(result5.split()[-2::]))
 
-        print "Remove VMs"
+        print("Remove VMs")
         for vm in vms:
             openstack_clients.compute.servers.delete(vm)
-        print "Remove FIPs"
+        print("Remove FIPs")
         for fip in fips:
             openstack_clients.compute.floating_ips.delete(fip)
     except Exception as e:
-        print e
-        print "Something went wrong"
+        print(e)
+        print("Something went wrong")
         for vm in vms:
             openstack_clients.compute.servers.delete(vm)
         for fip in fips:
