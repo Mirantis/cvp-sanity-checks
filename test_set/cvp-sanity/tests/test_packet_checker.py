@@ -1,36 +1,38 @@
 import pytest
 import json
-
 import utils
 
 
 def test_check_package_versions(local_salt_client, nodes_in_group):
-    output = local_salt_client.cmd("L@"+','.join(nodes_in_group),
-                                   'lowpkg.list_pkgs',
-                                   expr_form='compound')
+    exclude_packages = utils.get_configuration().get("skipped_packages", [])
+    packages_versions = local_salt_client.cmd("L@"+','.join(nodes_in_group),
+                                               'lowpkg.list_pkgs',
+                                               expr_form='compound')
     # Let's exclude cid01 and dbs01 nodes from this check
     exclude_nodes = local_salt_client.cmd("I@galera:master or I@gerrit:client",
                                           'test.ping',
                                           expr_form='compound').keys()
-    total_nodes = [i for i in output.keys() if i not in exclude_nodes]
+    total_nodes = [i for i in packages_versions.keys() if i not in exclude_nodes]
     if len(total_nodes) < 2:
         pytest.skip("Nothing to compare - only 1 node")
 
     nodes = []
     pkts_data = []
-    my_set = set()
+    packages_names = set()
 
     for node in total_nodes:
         nodes.append(node)
-        my_set.update(output[node].keys())
+        packages_names.update(packages_versions[node].keys())
 
-    for deb in my_set:
+    for deb in packages_names:
+        if deb in exclude_packages:
+            continue
         diff = []
         row = []
         for node in nodes:
-            if deb in output[node].keys():
-                diff.append(output[node][deb])
-                row.append("{}: {}".format(node, output[node][deb]))
+            if deb in packages_versions[node].keys():
+                diff.append(packages_versions[node][deb])
+                row.append("{}: {}".format(node, packages_versions[node][deb]))
             else:
                 row.append("{}: No package".format(node))
         if diff.count(diff[0]) < len(nodes):
@@ -64,6 +66,7 @@ def test_packages_are_latest(local_salt_client, nodes_in_group):
 
 
 def test_check_module_versions(local_salt_client, nodes_in_group):
+    exclude_modules = utils.get_configuration().get("skipped_modules", [])
     pre_check = local_salt_client.cmd(
         "L@"+','.join(nodes_in_group),
         'cmd.run',
@@ -79,26 +82,28 @@ def test_check_module_versions(local_salt_client, nodes_in_group):
 
     if len(total_nodes) < 2:
         pytest.skip("Nothing to compare - only 1 node")
-    output = local_salt_client.cmd("L@"+','.join(nodes_in_group),
+    list_of_pip_packages = local_salt_client.cmd("L@"+','.join(nodes_in_group),
                                    'pip.freeze', expr_form='compound')
 
     nodes = []
 
     pkts_data = []
-    my_set = set()
+    packages_names = set()
 
     for node in total_nodes:
         nodes.append(node)
-        my_set.update([x.split("=")[0] for x in output[node]])
-        output[node] = dict([x.split("==") for x in output[node]])
+        packages_names.update([x.split("=")[0] for x in list_of_pip_packages[node]])
+        list_of_pip_packages[node] = dict([x.split("==") for x in list_of_pip_packages[node]])
 
-    for deb in my_set:
+    for deb in packages_names:
+        if deb in exclude_modules:
+            continue
         diff = []
         row = []
         for node in nodes:
-            if deb in output[node].keys():
-                diff.append(output[node][deb])
-                row.append("{}: {}".format(node, output[node][deb]))
+            if deb in list_of_pip_packages[node].keys():
+                diff.append(list_of_pip_packages[node][deb])
+                row.append("{}: {}".format(node, list_of_pip_packages[node][deb]))
             else:
                 row.append("{}: No module".format(node))
         if diff.count(diff[0]) < len(nodes):

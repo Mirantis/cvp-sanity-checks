@@ -15,6 +15,7 @@ def test_check_services(local_salt_client, nodes_in_group):
     Skips services if they are not consistent for all node.
     Inconsistent services will be checked with another test case
     """
+    exclude_services = utils.get_configuration().get("exclude_services", [])
     output = local_salt_client.cmd("L@"+','.join(nodes_in_group), 'service.get_all', expr_form='compound')
 
     if len(output.keys()) < 2:
@@ -29,6 +30,8 @@ def test_check_services(local_salt_client, nodes_in_group):
         my_set.update(output[node])
 
     for srv in my_set:
+        if srv in exclude_services:
+            continue
         diff = []
         row = []
         for node in nodes:
