@@ -81,3 +81,12 @@ jenkins_cvp_job: 'cvp-sanity'
 # ntp test setting
 # this test may skip specific node (use fqdn)
 ntp_skipped_nodes: [""]
+
+# packages need to skip in
+# test_check_package_versions
+skipped_packages: [""]
+# test_check_module_versions
+skipped_modules: [""]
+# test_check_services
+skipped_services: [""]
+
