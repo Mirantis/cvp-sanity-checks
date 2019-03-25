@@ -286,12 +286,16 @@ def test_drivetrain_components_and_versions(local_salt_client):
 
 
 def test_jenkins_jobs_branch(local_salt_client):
+    """ This test compares Jenkins jobs versions
+        collected from the cloud vs collected from pillars.
+    """
     excludes = ['upgrade-mcp-release', 'deploy-update-salt']
 
     config = utils.get_configuration()
     drivetrain_version = config.get('drivetrain_version', '')
     if not drivetrain_version:
         pytest.skip("drivetrain_version is not defined. Skipping")
+
     jenkins_password = get_password(local_salt_client, 'jenkins:client')
     version_mismatch = []
     server = join_to_jenkins(local_salt_client, 'admin', jenkins_password)
@@ -310,13 +314,18 @@ def test_jenkins_jobs_branch(local_salt_client):
         if drivetrain_version in ['testing','nightly','stable']:
             expected_version = 'master'
         else:
-            expected_version = drivetrain_version
+            expected_version = local_salt_client.cmd(
+                'I@gerrit:client',
+                'pillar.get',
+                ['jenkins:client:job:{}:scm:branch'.format(job_name)],
+                expr_form='compound').values()[0]
 
         if not BranchSpec:
             print("No BranchSpec has found for {} job".format(job_name))
             continue
 
         actual_version = BranchSpec[0].getElementsByTagName('name')[0].childNodes[0].data
+
         if (actual_version not in [expected_version, "release/{}".format(drivetrain_version)]):
             version_mismatch.append("Job {0} has {1} branch."
                                     "Expected {2}".format(job_name,
