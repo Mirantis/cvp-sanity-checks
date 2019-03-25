@@ -257,23 +257,9 @@ def test_drivetrain_services_replicas(local_salt_client):
 
 
 def test_drivetrain_components_and_versions(local_salt_client):
-    config = utils.get_configuration()
-    if not config['drivetrain_version']:
-        expected_version = \
-            local_salt_client.cmd(
-                'I@salt:master',
-                'pillar.get',
-                ['_param:mcp_version'],
-                expr_form='compound').values()[0] or \
-            local_salt_client.cmd(
-                'I@salt:master',
-                'pillar.get',
-                ['_param:apt_mk_version'],
-                expr_form='compound').values()[0]
-        if not expected_version:
-            pytest.skip("drivetrain_version is not defined. Skipping")
-    else:
-        expected_version = config['drivetrain_version']
+    """ This test compares drivetrain components and their versions
+        collected from the cloud vs collected from pillars.
+    """
     table_with_docker_services = local_salt_client.cmd('I@gerrit:client',
                                                        'cmd.run',
                                                        ['docker service ls --format "{{.Image}}"'],
@@ -283,23 +269,20 @@ def test_drivetrain_components_and_versions(local_salt_client):
                                               ['docker:client:images'],
                                               expr_form='compound')
 
-    expected_images = table_from_pillar[table_from_pillar.keys()[0]]
-    actual_images = table_with_docker_services[table_with_docker_services.keys()[0]].split('\n')
-
-    # ---------------- Check that all docker services are found regarding the 'pillar.get docker:client:images' ----
-    not_found_services = list(set(expected_images) - set(actual_images))
-    assert not_found_services.__len__() == 0, \
-        ''' Some DriveTrain components are not found: {}'''.format(json.dumps(not_found_services, indent=4))
-
-    # ---------- Check that all docker services has label that equals to mcp_version (except of external images) ----
-    version_mismatch = [
-        "{image}: expected version - {expected_version}, actual - {version}".format(version=image.split(":")[-1], **locals())
-        for image in actual_images
-        if image.split(":")[-1] != expected_version and "mirantis/external" not in image]
-
-    assert version_mismatch.__len__() == 0, \
-        '''Version mismatch found:
-              {}'''.format(json.dumps(version_mismatch, indent=4))
+    mismatch = {}
+    actual_images = {}
+    for image in set(table_with_docker_services[table_with_docker_services.keys()[0]].split('\n')):
+        actual_images[image.split(":")[0]] = image.split(":")[-1]
+    for image in set(table_from_pillar[table_from_pillar.keys()[0]]):
+        im_name = image.split(":")[0]
+        if im_name not in actual_images:
+            mismatch[im_name] = 'not found on env'
+        elif image.split(":")[-1] != actual_images[im_name]:
+            mismatch[im_name] = 'has {actual} version instead of {expected}'.format(
+                actual=actual_images[im_name], expected=image.split(":")[-1])
+    assert len(mismatch) == 0, \
+        '''Some DriveTrain components doesn't have expected versions:
+              {}'''.format(json.dumps(mismatch, indent=4))
 
 
 def test_jenkins_jobs_branch(local_salt_client):
