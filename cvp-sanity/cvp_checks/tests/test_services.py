@@ -3,7 +3,7 @@ import json
 import os
 from cvp_checks import utils
 
-# Some nodes can have services that are not applicable for other noder in similar group.
+# Some nodes can have services that are not applicable for other nodes in similar group.
 # For example , there are 3 node in kvm group, but just kvm03 node has srv-volumes-backup.mount service
 # in service.get_all
 #                        NODE NAME          SERVICE_NAME
@@ -15,38 +15,40 @@ def test_check_services(local_salt_client, nodes_in_group):
     Skips services if they are not consistent for all node.
     Inconsistent services will be checked with another test case
     """
-    output = local_salt_client.cmd("L@"+','.join(nodes_in_group), 'service.get_all', expr_form='compound')
+    exclude_services = utils.get_configuration().get("exclude_services", [])
+    services_by_nodes = local_salt_client.cmd("L@"+','.join(nodes_in_group), 'service.get_all', expr_form='compound')
 
-    if len(output.keys()) < 2:
+    if len(services_by_nodes.keys()) < 2:
         pytest.skip("Nothing to compare - only 1 node")
 
     nodes = []
     pkts_data = []
-    my_set = set()
+    all_services = set()
 
-    for node in output:
+    for node in services_by_nodes:
         nodes.append(node)
-        my_set.update(output[node])
+        all_services.update(services_by_nodes[node])
 
-    for srv in my_set:
-        diff = []
-        row = []
+    for srv in all_services:
+        if srv in exclude_services:
+            continue
+        service_existence = dict()
         for node in nodes:
             short_name_of_node = node.split('.')[0]
             if inconsistency_rule.get(short_name_of_node) is not None and srv in inconsistency_rule[short_name_of_node]:
-                # Found service on node and it SHOULD be there
+                # Skip the checking of some service on the specific node
                 break
-            elif srv in output[node]:
+            elif srv in services_by_nodes[node]:
                 # Found service on node
-                diff.append(srv)
-                row.append("{}: +".format(node))
+                service_existence[node] = "+"
             else:
                 # Not found expected service on node
-                row.append("{}: No service".format(node))
-        if diff.__len__() > 0 and diff.count(diff[0]) < len(nodes):
-            row.sort()
-            row.insert(0, srv)
-            pkts_data.append(row)
+                service_existence[node] = "No service"
+        if set(service_existence.values()).__len__() > 1:
+            report = ["{node}: {status}".format(node=node, status=status) for node, status in service_existence.items()]
+            report.sort()
+            report.insert(0, srv)
+            pkts_data.append(report)
     assert len(pkts_data) == 0, \
         "Several problems found: {0}".format(
         json.dumps(pkts_data, indent=4))
