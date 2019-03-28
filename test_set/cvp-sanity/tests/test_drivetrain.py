@@ -316,6 +316,9 @@ def test_drivetrain_components_and_versions(local_salt_client):
 
 
 def test_jenkins_jobs_branch(local_salt_client):
+    """ This test compares Jenkins jobs versions
+        collected from the cloud vs collected from pillars.
+    """
     excludes = ['upgrade-mcp-release', 'deploy-update-salt']
 
     config = utils.get_configuration()
@@ -340,7 +343,11 @@ def test_jenkins_jobs_branch(local_salt_client):
         if drivetrain_version in ['testing','nightly','stable']:
             expected_version = 'master'
         else:
-            expected_version = drivetrain_version
+            expected_version = local_salt_client.cmd(
+                'I@gerrit:client',
+                'pillar.get',
+                ['jenkins:client:job:{}:scm:branch'.format(job_name)],
+                expr_form='compound').values()[0]
 
         if not BranchSpec:
             print("No BranchSpec has found for {} job".format(job_name))
