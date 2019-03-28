@@ -26,6 +26,7 @@ def test_k8s_get_cs_status(local_salt_client):
                                                        indent=4))
 
 
+@pytest.mark.xfail
 def test_k8s_get_nodes_status(local_salt_client):
     result = local_salt_client.cmd(
         'etcd:server', 'cmd.run',
