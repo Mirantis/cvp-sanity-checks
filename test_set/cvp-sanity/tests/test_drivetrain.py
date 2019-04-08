@@ -115,12 +115,20 @@ def test_drivetrain_gerrit(local_salt_client):
 
 
 def test_drivetrain_openldap(local_salt_client):
-    '''Create a test user 'DT_test_user' in openldap,
-    add the user to admin group, login using the user to Jenkins.
-    Add the user to devops group in Gerrit and then login to Gerrit,
-    using test_user credentials. Finally, delete the user from admin
-    group and openldap
-    '''
+    """
+         1. Create a test user 'DT_test_user' in openldap
+         2. Add the user to admin group
+         3. Login using the user to Jenkins
+         4. Check that no error occurred
+         5. Add the user to devops group in Gerrit and then login to Gerrit
+        using test_user credentials.
+         6 Start job in jenkins from this user
+         7. Get info from gerrit  from this user
+         6. Finally, delete the user from admin
+        group and openldap
+    """
+
+    # TODO split to several test cases. One check - per one test method. Make the login process in fixture
     ldap_password = get_password(local_salt_client,'openldap:client')
     #Check that ldap_password is exists, otherwise skip test
     if not ldap_password:
@@ -159,7 +167,7 @@ def test_drivetrain_openldap(local_salt_client):
     admin_gr_dn = 'cn=admins,ou=groups,{0}'.format(ldap_dc)
     #List of attributes for test user
     attrs = {}
-    attrs['objectclass'] = ['organizationalRole','simpleSecurityObject','shadowAccount']
+    attrs['objectclass'] = ['organizationalRole', 'simpleSecurityObject', 'shadowAccount']
     attrs['cn'] = test_user_name
     attrs['uid'] = test_user_name
     attrs['userPassword'] = 'aSecretPassw'
@@ -213,50 +221,22 @@ def test_drivetrain_openldap(local_salt_client):
         '''Test user was not found'''
 
 
-def test_drivetrain_jenkins_job(local_salt_client):
-    jenkins_password = get_password(local_salt_client,'jenkins:client')
-    server = join_to_jenkins(local_salt_client,'admin',jenkins_password)
-    #Getting Jenkins test job name from configuration
-    config = utils.get_configuration()
-    jenkins_test_job = config['jenkins_test_job']
-    if not server.get_job_name(jenkins_test_job):
-        server.create_job(jenkins_test_job, jenkins.EMPTY_CONFIG_XML)
-    if server.get_job_name(jenkins_test_job):
-        next_build_num = server.get_job_info(jenkins_test_job)['nextBuildNumber']
-        #If this is first build number skip building check
-        if next_build_num != 1:
-            #Check that test job is not running at this moment,
-            #Otherwise skip the test
-            last_build_num = server.get_job_info(jenkins_test_job)['lastBuild'].get('number')
-            last_build_status = server.get_build_info(jenkins_test_job,last_build_num)['building']
-            if last_build_status:
-                pytest.skip("Test job {0} is already running").format(jenkins_test_job)
-        server.build_job(jenkins_test_job)
-        timeout = 0
-        #Use job status True by default to exclude timeout between build job and start job.
-        job_status = True
-        while job_status and ( timeout < 180 ):
-            time.sleep(10)
-            timeout += 10
-            job_status = server.get_build_info(jenkins_test_job,next_build_num)['building']
-        job_result = server.get_build_info(jenkins_test_job,next_build_num)['result']
-    else:
-        pytest.skip("The job {0} was not found").format(test_job_name)
-    assert job_result == 'SUCCESS', \
-        '''Test job '{0}' build was not successfull or timeout is too small
-         '''.format(jenkins_test_job)
-
-
 def test_drivetrain_services_replicas(local_salt_client):
+    """
+        # Execute ` salt -C 'I@gerrit:client' cmd.run 'docker service ls'` command to get info  for each docker service like that:
+        "x5nzktxsdlm6        jenkins_slave02     replicated          0/1                 docker-prod-local.artifactory.mirantis.com/mirantis/cicd/jnlp-slave:2019.2.0         "
+        # Check that each service has all replicas
+    """
     # TODO: replace with rerunfalures plugin
+    wrong_items = []
     for _ in range(4):
-        salt_output = local_salt_client.cmd(
+        docker_services_by_nodes = local_salt_client.cmd(
             'I@gerrit:client',
             'cmd.run',
             ['docker service ls'],
             expr_form='compound')
         wrong_items = []
-        for line in salt_output[salt_output.keys()[0]].split('\n'):
+        for line in docker_services_by_nodes[docker_services_by_nodes.keys()[0]].split('\n'):
             if line[line.find('/') - 1] != line[line.find('/') + 1] \
                and 'replicated' in line:
                 wrong_items.append(line)
@@ -266,13 +246,34 @@ def test_drivetrain_services_replicas(local_salt_client):
             print('''Some DriveTrain services doesn't have expected number of replicas:
                   {}\n'''.format(json.dumps(wrong_items, indent=4)))
             time.sleep(5)
-        assert len(wrong_items) == 0
+    assert len(wrong_items) == 0
 
 
 def test_drivetrain_components_and_versions(local_salt_client):
-    """ This test compares drivetrain components and their versions
-        collected from the cloud vs collected from pillars.
     """
+        1. Execute command `docker service ls --format "{{.Image}}"'` on  the 'I@gerrit:client' target
+        2. Execute  ` salt -C 'I@gerrit:client' pillar.get docker:client:images`
+        3. Check that list of images from step 1 is the same as a list from the step2
+        4. Check that all docker services has label that equals to mcp_version
+
+    """
+    config = utils.get_configuration()
+    if not config['drivetrain_version']:
+        expected_version = \
+            local_salt_client.cmd(
+                'I@salt:master',
+                'pillar.get',
+                ['_param:mcp_version'],
+                expr_form='compound').values()[0] or \
+            local_salt_client.cmd(
+                'I@salt:master',
+                'pillar.get',
+                ['_param:apt_mk_version'],
+                expr_form='compound').values()[0]
+        if not expected_version:
+            pytest.skip("drivetrain_version is not defined. Skipping")
+    else:
+        expected_version = config['drivetrain_version']
     table_with_docker_services = local_salt_client.cmd('I@gerrit:client',
                                                        'cmd.run',
                                                        ['docker service ls --format "{{.Image}}"'],
@@ -323,7 +324,7 @@ def test_jenkins_jobs_branch(local_salt_client):
         # We use master branch for pipeline-library in case of 'testing,stable,nighlty' versions
         # Leave proposed version as is
         # in other cases we get release/{drivetrain_version}  (e.g release/2019.2.0)
-        if drivetrain_version in ['testing','nightly','stable']:
+        if drivetrain_version in ['testing', 'nightly', 'stable']:
             expected_version = 'master'
         else:
             expected_version = local_salt_client.cmd(
@@ -337,7 +338,7 @@ def test_jenkins_jobs_branch(local_salt_client):
             continue
 
         actual_version = BranchSpec[0].getElementsByTagName('name')[0].childNodes[0].data
-        if (actual_version not in [expected_version, "release/{}".format(drivetrain_version)]):
+        if actual_version not in [expected_version, "release/{}".format(drivetrain_version)]:
             version_mismatch.append("Job {0} has {1} branch."
                                     "Expected {2}".format(job_name,
                                                           actual_version,
@@ -345,3 +346,46 @@ def test_jenkins_jobs_branch(local_salt_client):
     assert len(version_mismatch) == 0, \
         '''Some DriveTrain jobs have version/branch mismatch:
               {}'''.format(json.dumps(version_mismatch, indent=4))
+
+
+def test_drivetrain_jenkins_job(local_salt_client):
+    """
+        # Login to Jenkins on jenkins:client
+        # Read the name of jobs from configuration 'jenkins_test_job'
+        # Start job
+        # Wait till the job completed
+        # Check that job has completed with "SUCCESS" result
+    """
+    job_result = None
+
+    jenkins_password = get_password(local_salt_client, 'jenkins:client')
+    server = join_to_jenkins(local_salt_client, 'admin', jenkins_password)
+    # Getting Jenkins test job name from configuration
+    config = utils.get_configuration()
+    jenkins_test_job = config['jenkins_test_job']
+    if not server.get_job_name(jenkins_test_job):
+        server.create_job(jenkins_test_job, jenkins.EMPTY_CONFIG_XML)
+    if server.get_job_name(jenkins_test_job):
+        next_build_num = server.get_job_info(jenkins_test_job)['nextBuildNumber']
+        # If this is first build number skip building check
+        if next_build_num != 1:
+            # Check that test job is not running at this moment,
+            # Otherwise skip the test
+            last_build_num = server.get_job_info(jenkins_test_job)['lastBuild'].get('number')
+            last_build_status = server.get_build_info(jenkins_test_job, last_build_num)['building']
+            if last_build_status:
+                pytest.skip("Test job {0} is already running").format(jenkins_test_job)
+        server.build_job(jenkins_test_job)
+        timeout = 0
+        # Use job status True by default to exclude timeout between build job and start job.
+        job_status = True
+        while job_status and (timeout < 180):
+            time.sleep(10)
+            timeout += 10
+            job_status = server.get_build_info(jenkins_test_job, next_build_num)['building']
+        job_result = server.get_build_info(jenkins_test_job, next_build_num)['result']
+    else:
+        pytest.skip("The job {0} was not found").format(jenkins_test_job)
+    assert job_result == 'SUCCESS', \
+        '''Test job '{0}' build was not successful or timeout is too small
+         '''.format(jenkins_test_job)
