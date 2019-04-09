@@ -73,7 +73,7 @@ def os_resources(openstack_clients):
     adm_tenant = os_actions.get_admin_tenant()
     os_resource['router'] = os_actions.create_router(os_resource['ext_net'], adm_tenant.id)
     os_resource['net2'] = os_actions.create_network(adm_tenant.id)
-    os_resource['subnet2'] = os_actions.create_subnet(os_resource['net2'], adm_tenant, '10.2.7.0/24')
+    os_resource['subnet2'] = os_actions.create_subnet(os_resource['net2'], adm_tenant.id, '10.2.7.0/24')
     for subnet in openstack_clients.network.list_subnets()['subnets']:
         if subnet['network_id'] == os_resource['net1']['id']:
             os_resource['subnet1'] = subnet['id']
