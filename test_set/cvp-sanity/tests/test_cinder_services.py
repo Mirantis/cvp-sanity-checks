@@ -2,13 +2,18 @@ import pytest
 
 
 def test_cinder_services(local_salt_client):
+    """
+        # Make sure that cinder backend exists with next command: `salt -C "I@cinder:controller" pillar.get cinder:controller:backend`
+        # Check that all services has 'Up' status in output of `cinder service-list` on keystone:server nodes
+        # Check that quantity of backend in cinder:controller:backend pillar is similar to list of volumes in cinder service-list
+    """
     cinder_backends_info = local_salt_client.cmd(
         'cinder:controller',
         'pillar.get',
         ['cinder:controller:backend'],
         expr_form='pillar')
-    if not cinder_backends_info:
-        pytest.skip("Cinder service or cinder:controller pillar \
+    if not cinder_backends_info or not any(cinder_backends_info.values()):
+        pytest.skip("Cinder service or cinder:controller:backend pillar \
         are not found on this environment.")
     service_down = local_salt_client.cmd(
         'keystone:server',
