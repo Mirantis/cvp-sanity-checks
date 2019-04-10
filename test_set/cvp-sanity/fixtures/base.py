@@ -122,6 +122,28 @@ def contrail(local_salt_client):
     pytest.contrail = str(versions.pop())[:1]
 
 
+@pytest.fixture(scope='session')
+def check_kdt(local_salt_client):
+    kdt_nodes_available = local_salt_client.cmd(
+        "I@gerrit:client and I@kubernetes:pool",
+        "test.ping",
+        expr_form='compound'
+    )
+    if not kdt_nodes_available:
+        pytest.skip("No 'kdt' nodes found. Skipping this test...")
+
+
+@pytest.fixture(scope='session')
+def check_cicd(local_salt_client):
+    cicd_nodes_available = local_salt_client.cmd(
+        "I@gerrit:client and I@docker:swarm",
+        "test.ping",
+        expr_form='compound'
+    )
+    if not cicd_nodes_available:
+        pytest.skip("No 'cid' nodes found. Skipping this test...")
+
+
 @pytest.fixture(autouse=True, scope='session')
 def print_node_version(local_salt_client):
     """

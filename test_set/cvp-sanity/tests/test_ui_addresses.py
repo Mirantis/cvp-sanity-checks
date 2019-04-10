@@ -204,7 +204,7 @@ def test_public_ui_alerta(local_salt_client, ctl_nodes_pillar):
 
 
 @pytest.mark.usefixtures('check_drivetrain')
-def test_public_ui_jenkins(local_salt_client, ctl_nodes_pillar):
+def test_public_ui_jenkins(local_salt_client, ctl_nodes_pillar, check_cicd):
     IP = utils.get_monitoring_ip('cluster_public_host')
     protocol = 'https'
     port = '8081'
@@ -220,7 +220,7 @@ def test_public_ui_jenkins(local_salt_client, ctl_nodes_pillar):
 
 
 @pytest.mark.usefixtures('check_drivetrain')
-def test_public_ui_gerrit(local_salt_client, ctl_nodes_pillar):
+def test_public_ui_gerrit(local_salt_client, ctl_nodes_pillar, check_cicd):
     IP = utils.get_monitoring_ip('cluster_public_host')
     protocol = 'https'
     port = '8070'

@@ -54,7 +54,7 @@ def get_password(local_salt_client,service):
     return password
 
 
-def test_drivetrain_gerrit(local_salt_client):
+def test_drivetrain_gerrit(local_salt_client, check_cicd):
     gerrit_password = get_password(local_salt_client,'gerrit:client')
     gerrit_error = ''
     current_date = time.strftime("%Y%m%d-%H.%M.%S", time.localtime())
@@ -103,7 +103,7 @@ def test_drivetrain_gerrit(local_salt_client):
         #Get change id from Gerrit. Set Code-Review +2 and submit this change
         changes = server.get("/changes/?q=project:{0}".format(test_proj_name))
         last_change = changes[0].get('change_id')
-        server.post("/changes/{0}/revisions/1/review".format(last_change),json={"message":"All is good","labels":{"Code-Review":"+2"}})
+        server.post("/changes/{0}/revisions/1/review".format(last_change),json={"message": "All is good","labels":{"Code-Review":"+2"}})
         server.post("/changes/{0}/submit".format(last_change))
     except HTTPError, e:
         gerrit_error = e
@@ -114,7 +114,7 @@ def test_drivetrain_gerrit(local_salt_client):
         'Something is wrong with Gerrit'.format(gerrit_error)
 
 
-def test_drivetrain_openldap(local_salt_client):
+def test_drivetrain_openldap(local_salt_client, check_cicd):
     """
          1. Create a test user 'DT_test_user' in openldap
          2. Add the user to admin group
@@ -249,7 +249,7 @@ def test_drivetrain_services_replicas(local_salt_client):
     assert len(wrong_items) == 0
 
 
-def test_drivetrain_components_and_versions(local_salt_client):
+def test_drivetrain_components_and_versions(local_salt_client, check_cicd):
     """
         1. Execute command `docker service ls --format "{{.Image}}"'` on  the 'I@gerrit:client' target
         2. Execute  ` salt -C 'I@gerrit:client' pillar.get docker:client:images`
@@ -348,7 +348,7 @@ def test_jenkins_jobs_branch(local_salt_client):
               {}'''.format(json.dumps(version_mismatch, indent=4))
 
 
-def test_drivetrain_jenkins_job(local_salt_client):
+def test_drivetrain_jenkins_job(local_salt_client, check_cicd):
     """
         # Login to Jenkins on jenkins:client
         # Read the name of jobs from configuration 'jenkins_test_job'
