@@ -1,4 +1,3 @@
-import pytest
 from collections import Counter
 from pprint import pformat
 import os
@@ -16,22 +15,24 @@ def get_duplicate_ifaces(nodes, ips):
 
 
 def test_duplicate_ips(local_salt_client):
-    active_nodes = utils.get_active_nodes()
-
     testname = os.path.basename(__file__).split('.')[0]
     config = utils.get_configuration()
     skipped_ifaces = config.get(testname)["skipped_ifaces"]
 
-    local_salt_client.cmd('L@'+','.join(active_nodes),
-                          'saltutil.refresh_grains',
+    local_salt_client.cmd(tgt='*',
+                          fun='saltutil.refresh_grains',
                           expr_form='compound')
-    nodes = local_salt_client.cmd('L@'+','.join(active_nodes),
-                                  'grains.item',
-                                  ['ip4_interfaces'],
+    nodes = local_salt_client.cmd(tgt='*',
+                                  fun='grains.item',
+                                  param='ip4_interfaces',
                                   expr_form='compound')
 
     ipv4_list = []
     for node in nodes:
+        if isinstance(nodes[node], bool):
+            # TODO: do not skip node
+            print ("{} node is skipped".format(node))
+            continue
         for iface in nodes[node]['ip4_interfaces']:
             # Omit 'ip-less' ifaces
             if not nodes[node]['ip4_interfaces'][iface]:

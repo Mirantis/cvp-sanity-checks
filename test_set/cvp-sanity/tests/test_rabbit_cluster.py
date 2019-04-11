@@ -6,23 +6,26 @@ def test_checking_rabbitmq_cluster(local_salt_client):
     # it may be reintroduced in future
     config = utils.get_configuration()
     # request pillar data from rmq nodes
+    # TODO: pillar.get
     rabbitmq_pillar_data = local_salt_client.cmd(
-        'rabbitmq:server', 'pillar.data',
-        ['rabbitmq:cluster'], expr_form='pillar')
+        tgt='rabbitmq:server',
+        fun='pillar.get',
+        param='rabbitmq:cluster',
+        expr_form='pillar')
     # creating dictionary {node:cluster_size_for_the_node}
     # with required cluster size for each node
     control_dict = {}
     required_cluster_size_dict = {}
     # request actual data from rmq nodes
     rabbit_actual_data = local_salt_client.cmd(
-        'rabbitmq:server', 'cmd.run',
-        ['rabbitmqctl cluster_status'], expr_form='pillar')
+        tgt='rabbitmq:server',
+        param='rabbitmqctl cluster_status', expr_form='pillar')
     for node in rabbitmq_pillar_data:
         if node in config.get('skipped_nodes'):
             del rabbit_actual_data[node]
             continue
         cluster_size_from_the_node = len(
-            rabbitmq_pillar_data[node]['rabbitmq:cluster']['members'])
+            rabbitmq_pillar_data[node]['members'])
         required_cluster_size_dict.update({node: cluster_size_from_the_node})
 
     # find actual cluster size for each node

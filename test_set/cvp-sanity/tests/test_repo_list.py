@@ -1,16 +1,18 @@
-import pytest
-import utils
-
-
 def test_list_of_repo_on_nodes(local_salt_client, nodes_in_group):
-    info_salt = local_salt_client.cmd('L@' + ','.join(
-                                      nodes_in_group),
-                                      'pillar.data', ['linux:system:repo'],
+    # TODO: pillar.get
+    info_salt = local_salt_client.cmd(tgt='L@' + ','.join(
+                                              nodes_in_group),
+                                      fun='pillar.get',
+                                      param='linux:system:repo',
                                       expr_form='compound')
 
     # check if some repos are disabled
     for node in info_salt.keys():
-        repos = info_salt[node]["linux:system:repo"]
+        repos = info_salt[node]
+        if not info_salt[node]:
+            # TODO: do not skip node
+            print "Node {} is skipped".format (node)
+            continue
         for repo in repos.keys():
             repository = repos[repo]
             if "enabled" in repository:
@@ -18,21 +20,19 @@ def test_list_of_repo_on_nodes(local_salt_client, nodes_in_group):
                     repos.pop(repo)
 
     raw_actual_info = local_salt_client.cmd(
-        'L@' + ','.join(
-        nodes_in_group),
-        'cmd.run',
-        ['cat /etc/apt/sources.list.d/*;'
-         'cat /etc/apt/sources.list|grep deb|grep -v "#"'],
-        expr_form='compound')
+        tgt='L@' + ','.join(
+            nodes_in_group),
+        param='cat /etc/apt/sources.list.d/*;'
+              'cat /etc/apt/sources.list|grep deb|grep -v "#"',
+        expr_form='compound', check_status=True)
     actual_repo_list = [item.replace('/ ', ' ').replace('[arch=amd64] ', '')
                         for item in raw_actual_info.values()[0].split('\n')]
-    if info_salt.values()[0]['linux:system:repo'] == '':
+    if info_salt.values()[0] == '':
         expected_salt_data = ''
     else:
         expected_salt_data = [repo['source'].replace('/ ', ' ')
                                             .replace('[arch=amd64] ', '')
-                              for repo in info_salt.values()[0]
-                              ['linux:system:repo'].values()
+                              for repo in info_salt.values()[0].values()
                               if 'source' in repo.keys()]
 
     diff = {}

@@ -1,6 +1,5 @@
 import pytest
 import json
-import utils
 
 pytestmark = pytest.mark.usefixtures("contrail")
 
@@ -9,8 +8,8 @@ STATUS_COMMAND = "contrail-status -t 10"
 
 def get_contrail_status(salt_client, pillar, command, processor):
     return salt_client.cmd(
-        pillar, 'cmd.run',
-        ['{} | {}'.format(command, processor)],
+        tgt=pillar,
+        param='{} | {}'.format(command, processor),
         expr_form='pillar'
     )
 
@@ -89,15 +88,13 @@ def test_contrail_vrouter_count(local_salt_client):
 
 
 def test_public_ui_contrail(local_salt_client, ctl_nodes_pillar):
-    IP = utils.get_monitoring_ip('cluster_public_host')
+    IP = local_salt_client.pillar_get(param='_param:cluster_public_host')
     protocol = 'https'
     port = '8143'
     url = "{}://{}:{}".format(protocol, IP, port)
-    result = local_salt_client.cmd(
-        ctl_nodes_pillar,
-        'cmd.run',
-        ['curl -k {}/ 2>&1 | \
-         grep Contrail'.format(url)],
-        expr_form='pillar')
-    assert len(result[result.keys()[0]]) != 0, \
+    result = local_salt_client.cmd_any(
+        tgt=ctl_nodes_pillar,
+        param='curl -k {}/ 2>&1 | \
+               grep Contrail'.format(url))
+    assert len(result) != 0, \
         'Public Contrail UI is not reachable on {} from ctl nodes'.format(url)

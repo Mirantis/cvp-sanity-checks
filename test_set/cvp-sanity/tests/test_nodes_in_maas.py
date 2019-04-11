@@ -1,45 +1,35 @@
 import json
 import pytest
-
 import utils
 
 
 def get_maas_logged_in_profiles(local_salt_client):
-    get_apis = local_salt_client.cmd(
-        'maas:cluster',
-        'cmd.run',
-        ['maas list'],
-        expr_form='pillar')
-    return get_apis.values()[0]
+    get_apis = local_salt_client.cmd_any(
+        tgt='maas:cluster',
+        param='maas list')
+    return get_apis
 
 
 def login_to_maas(local_salt_client, user):
-    login = local_salt_client.cmd(
-        'maas:cluster',
-        'cmd.run',
-        ["source /var/lib/maas/.maas_login.sh  ; echo {}=${{PROFILE}}"
-         "".format(user)],
-        expr_form='pillar')
-    return login.values()[0]
+    login = local_salt_client.cmd_any(
+        tgt='maas:cluster',
+        param="source /var/lib/maas/.maas_login.sh  ; echo {}=${{PROFILE}}"
+              "".format(user))
+    return login
 
 
 def test_nodes_deployed_in_maas(local_salt_client):
     config = utils.get_configuration()
 
     # 1. Check MAAS is present on some node
-    check_maas = local_salt_client.cmd(
-        'maas:cluster',
-        'test.ping',
-        expr_form='pillar')
+    check_maas = local_salt_client.test_ping(tgt='maas:cluster')
     if not check_maas:
         pytest.skip("Could not find MAAS on the environment")
 
     # 2. Get MAAS admin user from model
-    maas_admin_user = local_salt_client.cmd(
-        'maas:cluster', 'pillar.get',
-        ['_param:maas_admin_username'],
-        expr_form='pillar'
-    ).values()[0]
+    maas_admin_user = local_salt_client.pillar_get(
+        tgt='maas:cluster',
+        param='_param:maas_admin_username')
     if not maas_admin_user:
         pytest.skip("Could not find MAAS admin user in the model by parameter "
                     "'maas_admin_username'")
@@ -57,9 +47,8 @@ def test_nodes_deployed_in_maas(local_salt_client):
 
     # 4. Get nodes in MAAS
     get_nodes = local_salt_client.cmd(
-        'maas:cluster',
-        'cmd.run',
-        ['maas {} nodes read'.format(maas_admin_user)],
+        tgt='maas:cluster',
+        param='maas {} nodes read'.format(maas_admin_user),
         expr_form='pillar')
     result = ""
     try:

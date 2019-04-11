@@ -22,27 +22,18 @@ def ctl_nodes_pillar(local_salt_client):
        If no platform is installed (no OS or k8s) we need to skip
        the test (product team use case).
     '''
-    salt_output = local_salt_client.cmd(
-        'keystone:server',
-        'test.ping',
-        expr_form='pillar')
+    salt_output = local_salt_client.test_ping(tgt='keystone:server')
     if salt_output:
         return "keystone:server"
     else:
-        salt_output = local_salt_client.cmd(
-            'etcd:server',
-            'test.ping',
-            expr_form='pillar')
+        salt_output = local_salt_client.test_ping(tgt='etcd:server')
         return "etcd:server" if salt_output else pytest.skip("Neither \
             Openstack nor k8s is found. Skipping test")
 
 
 @pytest.fixture(scope='session')
 def check_openstack(local_salt_client):
-    salt_output = local_salt_client.cmd(
-        'keystone:server',
-        'test.ping',
-        expr_form='pillar')
+    salt_output = local_salt_client.test_ping(tgt='keystone:server')
     if not salt_output:
         pytest.skip("Openstack not found or keystone:server pillar \
           are not found on this environment.")
@@ -50,10 +41,8 @@ def check_openstack(local_salt_client):
 
 @pytest.fixture(scope='session')
 def check_drivetrain(local_salt_client):
-    salt_output = local_salt_client.cmd(
-        'I@jenkins:client and not I@salt:master',
-        'test.ping',
-        expr_form='compound')
+    salt_output = local_salt_client.test_ping(tgt='I@jenkins:client and not I@salt:master',
+                                              expr_form='compound')
     if not salt_output:
         pytest.skip("Drivetrain service or jenkins:client pillar \
           are not found on this environment.")
@@ -61,10 +50,7 @@ def check_drivetrain(local_salt_client):
 
 @pytest.fixture(scope='session')
 def check_prometheus(local_salt_client):
-    salt_output = local_salt_client.cmd(
-        'prometheus:server',
-        'test.ping',
-        expr_form='pillar')
+    salt_output = local_salt_client.test_ping(tgt='prometheus:server')
     if not salt_output:
         pytest.skip("Prometheus service or prometheus:server pillar \
           are not found on this environment.")
@@ -72,10 +58,7 @@ def check_prometheus(local_salt_client):
 
 @pytest.fixture(scope='session')
 def check_alerta(local_salt_client):
-    salt_output = local_salt_client.cmd(
-        'prometheus:alerta',
-        'test.ping',
-        expr_form='pillar')
+    salt_output = local_salt_client.test_ping(tgt='prometheus:alerta')
     if not salt_output:
         pytest.skip("Alerta service or prometheus:alerta pillar \
               are not found on this environment.")
@@ -83,10 +66,7 @@ def check_alerta(local_salt_client):
 
 @pytest.fixture(scope='session')
 def check_kibana(local_salt_client):
-    salt_output = local_salt_client.cmd(
-        'kibana:server',
-        'test.ping',
-        expr_form='pillar')
+    salt_output = local_salt_client.test_ping(tgt='kibana:server')
     if not salt_output:
         pytest.skip("Kibana service or kibana:server pillar \
           are not found on this environment.")
@@ -94,10 +74,7 @@ def check_kibana(local_salt_client):
 
 @pytest.fixture(scope='session')
 def check_grafana(local_salt_client):
-    salt_output = local_salt_client.cmd(
-        'grafana:client',
-        'test.ping',
-        expr_form='pillar')
+    salt_output = local_salt_client.test_ping(tgt='grafana:client')
     if not salt_output:
         pytest.skip("Grafana service or grafana:client pillar \
           are not found on this environment.")
@@ -110,9 +87,9 @@ def pytest_namespace():
 @pytest.fixture(scope='module')
 def contrail(local_salt_client):
     probe = local_salt_client.cmd(
-        'opencontrail:control',
-        'pillar.get',
-        'opencontrail:control:version',
+        tgt='opencontrail:control',
+        fun='pillar.get',
+        param='opencontrail:control:version',
         expr_form='pillar')
     if not probe:
         pytest.skip("Contrail is not found on this environment")
@@ -124,9 +101,8 @@ def contrail(local_salt_client):
 
 @pytest.fixture(scope='session')
 def check_kdt(local_salt_client):
-    kdt_nodes_available = local_salt_client.cmd(
-        "I@gerrit:client and I@kubernetes:pool",
-        "test.ping",
+    kdt_nodes_available = local_salt_client.test_ping(
+        tgt="I@gerrit:client and I@kubernetes:pool",
         expr_form='compound'
     )
     if not kdt_nodes_available:
@@ -135,9 +111,8 @@ def check_kdt(local_salt_client):
 
 @pytest.fixture(scope='session')
 def check_cicd(local_salt_client):
-    cicd_nodes_available = local_salt_client.cmd(
-        "I@gerrit:client and I@docker:swarm",
-        "test.ping",
+    cicd_nodes_available = local_salt_client.test_ping(
+        tgt="I@gerrit:client and I@docker:swarm",
         expr_form='compound'
     )
     if not cicd_nodes_available:
@@ -164,9 +139,8 @@ def print_node_version(local_salt_client):
                                     fi ".format(name=filename_with_versions)
 
         list_version = local_salt_client.cmd(
-            '*',
-            'cmd.run',
-            'echo "NODE_INFO=$(uname -sr)" && ' + cat_image_version_file,
+            tgt='*',
+            param='echo "NODE_INFO=$(uname -sr)" && ' + cat_image_version_file,
             expr_form='compound')
         if list_version.__len__() == 0:
             yield

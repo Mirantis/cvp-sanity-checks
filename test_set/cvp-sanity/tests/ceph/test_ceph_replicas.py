@@ -8,23 +8,17 @@ def test_ceph_replicas(local_salt_client):
     special requirement for that.
     """
 
-    ceph_monitors = local_salt_client.cmd(
-        'ceph:mon', 
-        'test.ping', 
-        expr_form='pillar')
+    ceph_monitors = local_salt_client.test_ping(tgt='ceph:mon')
 
     if not ceph_monitors:
         pytest.skip("Ceph is not found on this environment")
 
     monitor = ceph_monitors.keys()[0]
 
-    raw_pool_replicas = local_salt_client.cmd(
-        monitor, 
-        'cmd.run', 
-        ["ceph osd dump | grep size | " \
-        "awk '{print $3, $5, $6, $7, $8}'"], 
-        expr_form='glob').get(
-        ceph_monitors.keys()[0]).split('\n')
+    raw_pool_replicas = local_salt_client.cmd_any(
+        tgt='ceph:mon',
+        param="ceph osd dump | grep size | " \
+              "awk '{print $3, $5, $6, $7, $8}'").split('\n')
 
     pools_replicas = {}
     for pool in raw_pool_replicas:

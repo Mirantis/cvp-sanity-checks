@@ -13,16 +13,14 @@ import ldap.modlist as modlist
 
 
 def join_to_gerrit(local_salt_client, gerrit_user, gerrit_password):
-    gerrit_port = local_salt_client.cmd(
-        'I@gerrit:client and not I@salt:master',
-        'pillar.get',
-        ['_param:haproxy_gerrit_bind_port'],
-        expr_form='compound').values()[0]
-    gerrit_address = local_salt_client.cmd(
-        'I@gerrit:client and not I@salt:master',
-        'pillar.get',
-        ['_param:haproxy_gerrit_bind_host'],
-        expr_form='compound').values()[0]
+    gerrit_port = local_salt_client.pillar_get(
+        tgt='I@gerrit:client and not I@salt:master',
+        param='_param:haproxy_gerrit_bind_port',
+        expr_form='compound')
+    gerrit_address = local_salt_client.pillar_get(
+        tgt='I@gerrit:client and not I@salt:master',
+        param='_param:haproxy_gerrit_bind_host',
+        expr_form='compound')
     url = 'http://{0}:{1}'.format(gerrit_address,gerrit_port)
     auth = HTTPBasicAuth(gerrit_user, gerrit_password)
     rest = GerritRestAPI(url=url, auth=auth)
@@ -30,27 +28,23 @@ def join_to_gerrit(local_salt_client, gerrit_user, gerrit_password):
 
 
 def join_to_jenkins(local_salt_client, jenkins_user, jenkins_password):
-    jenkins_port = local_salt_client.cmd(
-        'I@jenkins:client and not I@salt:master',
-        'pillar.get',
-        ['_param:haproxy_jenkins_bind_port'],
-        expr_form='compound').values()[0]
-    jenkins_address = local_salt_client.cmd(
-        'I@jenkins:client and not I@salt:master',
-        'pillar.get',
-        ['_param:haproxy_jenkins_bind_host'],
-        expr_form='compound').values()[0]
+    jenkins_port = local_salt_client.pillar_get(
+        tgt='I@jenkins:client and not I@salt:master',
+        param='_param:haproxy_jenkins_bind_port',
+        expr_form='compound')
+    jenkins_address = local_salt_client.pillar_get(
+        tgt='I@jenkins:client and not I@salt:master',
+        param='_param:haproxy_jenkins_bind_host',
+        expr_form='compound')
     jenkins_url = 'http://{0}:{1}'.format(jenkins_address,jenkins_port)
     server = jenkins.Jenkins(jenkins_url, username=jenkins_user, password=jenkins_password)
     return server
 
 
 def get_password(local_salt_client,service):
-    password = local_salt_client.cmd(
-        service,
-        'pillar.get',
-        ['_param:openldap_admin_password'],
-        expr_form='pillar').values()[0]
+    password = local_salt_client.pillar_get(
+        tgt=service,
+        param='_param:openldap_admin_password')
     return password
 
 
@@ -59,16 +53,14 @@ def test_drivetrain_gerrit(local_salt_client, check_cicd):
     gerrit_error = ''
     current_date = time.strftime("%Y%m%d-%H.%M.%S", time.localtime())
     test_proj_name = "test-dt-{0}".format(current_date)
-    gerrit_port = local_salt_client.cmd(
-        'I@gerrit:client and not I@salt:master',
-        'pillar.get',
-        ['_param:haproxy_gerrit_bind_port'],
-        expr_form='compound').values()[0]
-    gerrit_address = local_salt_client.cmd(
-        'I@gerrit:client and not I@salt:master',
-        'pillar.get',
-        ['_param:haproxy_gerrit_bind_host'],
-        expr_form='compound').values()[0]
+    gerrit_port = local_salt_client.pillar_get(
+        tgt='I@gerrit:client and not I@salt:master',
+        param='_param:haproxy_gerrit_bind_port',
+        expr_form='compound')
+    gerrit_address = local_salt_client.pillar_get(
+        tgt='I@gerrit:client and not I@salt:master',
+        param='_param:haproxy_gerrit_bind_host',
+        expr_form='compound')
     try:
         #Connecting to gerrit and check connection
         server = join_to_gerrit(local_salt_client,'admin',gerrit_password)
@@ -134,26 +126,20 @@ def test_drivetrain_openldap(local_salt_client, check_cicd):
     if not ldap_password:
         pytest.skip("Openldap service or openldap:client pillar \
         are not found on this environment.")
-    ldap_port = local_salt_client.cmd(
-        'I@openldap:client and not I@salt:master',
-        'pillar.get',
-        ['_param:haproxy_openldap_bind_port'],
-        expr_form='compound').values()[0]
-    ldap_address = local_salt_client.cmd(
-        'I@openldap:client and not I@salt:master',
-        'pillar.get',
-        ['_param:haproxy_openldap_bind_host'],
-        expr_form='compound').values()[0]
-    ldap_dc = local_salt_client.cmd(
-        'openldap:client',
-        'pillar.get',
-        ['_param:openldap_dn'],
-        expr_form='pillar').values()[0]
-    ldap_con_admin = local_salt_client.cmd(
-        'openldap:client',
-        'pillar.get',
-        ['openldap:client:server:auth:user'],
-        expr_form='pillar').values()[0]
+    ldap_port = local_salt_client.pillar_get(
+        tgt='I@openldap:client and not I@salt:master',
+        param='_param:haproxy_openldap_bind_port',
+        expr_form='compound')
+    ldap_address = local_salt_client.pillar_get(
+        tgt='I@openldap:client and not I@salt:master',
+        param='_param:haproxy_openldap_bind_host',
+        expr_form='compound')
+    ldap_dc = local_salt_client.pillar_get(
+        tgt='openldap:client',
+        param='_param:openldap_dn')
+    ldap_con_admin = local_salt_client.pillar_get(
+        tgt='openldap:client',
+        param='openldap:client:server:auth:user')
     ldap_url = 'ldap://{0}:{1}'.format(ldap_address,ldap_port)
     ldap_error = ''
     ldap_result = ''
@@ -231,9 +217,8 @@ def test_drivetrain_services_replicas(local_salt_client):
     wrong_items = []
     for _ in range(4):
         docker_services_by_nodes = local_salt_client.cmd(
-            'I@gerrit:client',
-            'cmd.run',
-            ['docker service ls'],
+            tgt='I@gerrit:client',
+            param='docker service ls',
             expr_form='compound')
         wrong_items = []
         for line in docker_services_by_nodes[docker_services_by_nodes.keys()[0]].split('\n'):
@@ -260,34 +245,22 @@ def test_drivetrain_components_and_versions(local_salt_client, check_cicd):
     config = utils.get_configuration()
     if not config['drivetrain_version']:
         expected_version = \
-            local_salt_client.cmd(
-                'I@salt:master',
-                'pillar.get',
-                ['_param:mcp_version'],
-                expr_form='compound').values()[0] or \
-            local_salt_client.cmd(
-                'I@salt:master',
-                'pillar.get',
-                ['_param:apt_mk_version'],
-                expr_form='compound').values()[0]
+            local_salt_client.pillar_get(param='_param:mcp_version') or \
+            local_salt_client.pillar_get(param='_param:apt_mk_version')
         if not expected_version:
             pytest.skip("drivetrain_version is not defined. Skipping")
     else:
         expected_version = config['drivetrain_version']
-    table_with_docker_services = local_salt_client.cmd('I@gerrit:client',
-                                                       'cmd.run',
-                                                       ['docker service ls --format "{{.Image}}"'],
+    table_with_docker_services = local_salt_client.cmd(tgt='I@gerrit:client',
+                                                       param='docker service ls --format "{{.Image}}"',
                                                        expr_form='compound')
-    table_from_pillar = local_salt_client.cmd('I@gerrit:client',
-                                              'pillar.get',
-                                              ['docker:client:images'],
-                                              expr_form='compound')
-
+    expected_images = local_salt_client.pillar_get(tgt='gerrit:client',
+                                                   param='docker:client:images')
     mismatch = {}
     actual_images = {}
     for image in set(table_with_docker_services[table_with_docker_services.keys()[0]].split('\n')):
         actual_images[image.split(":")[0]] = image.split(":")[-1]
-    for image in set(table_from_pillar[table_from_pillar.keys()[0]]):
+    for image in set(expected_images):
         im_name = image.split(":")[0]
         if im_name not in actual_images:
             mismatch[im_name] = 'not found on env'
@@ -303,7 +276,9 @@ def test_jenkins_jobs_branch(local_salt_client):
     """ This test compares Jenkins jobs versions
         collected from the cloud vs collected from pillars.
     """
-    excludes = ['upgrade-mcp-release', 'deploy-update-salt']
+    excludes = ['upgrade-mcp-release', 'deploy-update-salt',
+                'git-mirror-downstream-mk-pipelines',
+                'git-mirror-downstream-pipeline-library']
 
     config = utils.get_configuration()
     drivetrain_version = config.get('drivetrain_version', '')
@@ -327,11 +302,9 @@ def test_jenkins_jobs_branch(local_salt_client):
         if drivetrain_version in ['testing', 'nightly', 'stable']:
             expected_version = 'master'
         else:
-            expected_version = local_salt_client.cmd(
-                'I@gerrit:client',
-                'pillar.get',
-                ['jenkins:client:job:{}:scm:branch'.format(job_name)],
-                expr_form='compound').values()[0]
+            expected_version = local_salt_client.pillar_get(
+                tgt='gerrit:client',
+                param='jenkins:client:job:{}:scm:branch'.format(job_name))
 
         if not BranchSpec:
             print("No BranchSpec has found for {} job".format(job_name))

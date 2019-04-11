@@ -16,7 +16,9 @@ def test_check_services(local_salt_client, nodes_in_group):
     Inconsistent services will be checked with another test case
     """
     exclude_services = utils.get_configuration().get("exclude_services", [])
-    services_by_nodes = local_salt_client.cmd("L@"+','.join(nodes_in_group), 'service.get_all', expr_form='compound')
+    services_by_nodes = local_salt_client.cmd(tgt="L@"+','.join(nodes_in_group),
+                                              fun='service.get_all',
+                                              expr_form='compound')
 
     if len(services_by_nodes.keys()) < 2:
         pytest.skip("Nothing to compare - only 1 node")
@@ -26,6 +28,10 @@ def test_check_services(local_salt_client, nodes_in_group):
     all_services = set()
 
     for node in services_by_nodes:
+        if not services_by_nodes[node]:
+            # TODO: do not skip node
+            print "Node {} is skipped".format (node)
+            continue
         nodes.append(node)
         all_services.update(services_by_nodes[node])
 

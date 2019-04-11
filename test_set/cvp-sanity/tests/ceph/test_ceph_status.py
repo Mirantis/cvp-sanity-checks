@@ -1,13 +1,11 @@
 import json
-
 import pytest
 
 
 def test_ceph_osd(local_salt_client):
     osd_fail = local_salt_client.cmd(
-        'ceph:osd',
-        'cmd.run',
-        ['ceph osd tree | grep down'],
+        tgt='ceph:osd',
+        param='ceph osd tree | grep down',
         expr_form='pillar')
     if not osd_fail:
         pytest.skip("Ceph is not found on this environment")
@@ -18,9 +16,8 @@ def test_ceph_osd(local_salt_client):
 
 def test_ceph_health(local_salt_client):
     get_status = local_salt_client.cmd(
-        'ceph:mon',
-        'cmd.run',
-        ['ceph -s -f json'],
+        tgt='ceph:mon',
+        param='ceph -s -f json',
         expr_form='pillar')
     if not get_status:
         pytest.skip("Ceph is not found on this environment")

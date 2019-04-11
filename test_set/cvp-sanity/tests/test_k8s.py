@@ -5,8 +5,8 @@ import os
 
 def test_k8s_get_cs_status(local_salt_client):
     result = local_salt_client.cmd(
-        'etcd:server', 'cmd.run',
-        ['kubectl get cs'],
+        tgt='etcd:server',
+        param='kubectl get cs',
         expr_form='pillar'
     )
     errors = []
@@ -28,8 +28,8 @@ def test_k8s_get_cs_status(local_salt_client):
 
 def test_k8s_get_nodes_status(local_salt_client):
     result = local_salt_client.cmd(
-        'etcd:server', 'cmd.run',
-        ['kubectl get nodes'],
+        tgt='etcd:server',
+        param='kubectl get nodes',
         expr_form='pillar'
     )
     errors = []
@@ -51,8 +51,8 @@ def test_k8s_get_nodes_status(local_salt_client):
 
 def test_k8s_get_calico_status(local_salt_client):
     result = local_salt_client.cmd(
-        'kubernetes:pool', 'cmd.run',
-        ['calicoctl node status'],
+        tgt='kubernetes:pool',
+        param='calicoctl node status',
         expr_form='pillar'
     )
     errors = []
@@ -73,8 +73,8 @@ def test_k8s_get_calico_status(local_salt_client):
 
 def test_k8s_cluster_status(local_salt_client):
     result = local_salt_client.cmd(
-        'kubernetes:master', 'cmd.run',
-        ['kubectl cluster-info'],
+        tgt='kubernetes:master',
+        param='kubectl cluster-info',
         expr_form='pillar'
     )
     errors = []
@@ -95,8 +95,9 @@ def test_k8s_cluster_status(local_salt_client):
 
 def test_k8s_kubelet_status(local_salt_client):
     result = local_salt_client.cmd(
-        'kubernetes:pool', 'service.status',
-        ['kubelet'],
+        tgt='kubernetes:pool',
+        fun='service.status',
+        param='kubelet',
         expr_form='pillar'
     )
     errors = []
@@ -111,8 +112,8 @@ def test_k8s_kubelet_status(local_salt_client):
 
 def test_k8s_check_system_pods_status(local_salt_client):
     result = local_salt_client.cmd(
-        'etcd:server', 'cmd.run',
-        ['kubectl --namespace="kube-system" get pods'],
+        tgt='etcd:server',
+        param='kubectl --namespace="kube-system" get pods',
         expr_form='pillar'
     )
     errors = []
@@ -151,34 +152,30 @@ def test_k8s_dashboard_available(local_salt_client):
         # Check that public_ip:8443 is accessible with curl
     """
     result = local_salt_client.cmd(
-        'etcd:server', 'cmd.run',
-        ['kubectl get svc -n kube-system'],
+        tgt='etcd:server',
+        param='kubectl get svc -n kube-system',
         expr_form='pillar'
     )
     if not result:
         pytest.skip("k8s is not found on this environment")
 
     # service name 'kubernetes-dashboard' is hardcoded in kubernetes formula
-    dashboard_enabled = local_salt_client.cmd(
-        'etcd:server', 'pillar.get',
-        ['kubernetes:common:addons:dashboard:enabled'],
-        expr_form='pillar'
-    ).values()[0]
+    dashboard_enabled = local_salt_client.pillar_get(
+        tgt='etcd:server',
+        param='kubernetes:common:addons:dashboard:enabled',)
     if not dashboard_enabled:
         pytest.skip("Kubernetes dashboard is not enabled in the cluster.")
 
-    external_ip = local_salt_client.cmd(
-        'etcd:server', 'pillar.get',
-        ['kubernetes:common:addons:dashboard:public_ip'],
-        expr_form='pillar'
-    ).values()[0]
+    external_ip = local_salt_client.pillar_get(
+        tgt='etcd:server',
+        param='kubernetes:common:addons:dashboard:public_ip')
 
     assert external_ip.__len__() > 0, "Kubernetes dashboard is enabled but not defined in pillars"
     # dashboard port 8443 is hardcoded in kubernetes formula
     url = "https://{}:8443".format(external_ip)
     check = local_salt_client.cmd(
-        'etcd:server', 'cmd.run',
-        ['curl {} 2>&1 | grep kubernetesDashboard'.format(url)],
+        tgt='etcd:server',
+        param='curl {} 2>&1 | grep kubernetesDashboard'.format(url),
         expr_form='pillar'
     )
     assert len(check.values()[0]) != 0, \

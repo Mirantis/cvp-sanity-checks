@@ -11,22 +11,26 @@ def test_mtu(local_salt_client, nodes_in_group):
         ["bonding_masters", "lo", "veth", "tap", "cali", "qv", "qb", "br-int", "vxlan"]
     total = {}
     network_info = local_salt_client.cmd(
-        "L@"+','.join(nodes_in_group), 'cmd.run', ['ls /sys/class/net/'], expr_form='compound')
+        tgt="L@"+','.join(nodes_in_group),
+        param='ls /sys/class/net/',
+        expr_form='compound')
 
-    kvm_nodes = local_salt_client.cmd(
-        'salt:control', 'test.ping', expr_form='pillar').keys()
+    kvm_nodes = local_salt_client.test_ping(tgt='salt:control').keys()
 
     if len(network_info.keys()) < 2:
         pytest.skip("Nothing to compare - only 1 node")
 
     for node, ifaces_info in network_info.iteritems():
+        if isinstance(ifaces_info, bool):
+            print ("{} node is skipped".format(node))
+            continue
         if node in kvm_nodes:
-            kvm_info = local_salt_client.cmd(node, 'cmd.run',
-                                             ["virsh list | "
-                                              "awk '{print $2}' | "
-                                              "xargs -n1 virsh domiflist | "
-                                              "grep -v br-pxe | grep br- | "
-                                              "awk '{print $1}'"])
+            kvm_info = local_salt_client.cmd(tgt=node,
+                                             param="virsh list | "
+                                                   "awk '{print $2}' | "
+                                                   "xargs -n1 virsh domiflist | "
+                                                   "grep -v br-pxe | grep br- | "
+                                                   "awk '{print $1}'")
             ifaces_info = kvm_info.get(node)
         node_ifaces = ifaces_info.split('\n')
         ifaces = {}
@@ -35,9 +39,9 @@ def test_mtu(local_salt_client, nodes_in_group):
                 if skipped_iface in iface:
                     break
             else:
-                iface_mtu = local_salt_client.cmd(node, 'cmd.run',
-                                                  ['cat /sys/class/'
-                                                   'net/{}/mtu'.format(iface)])
+                iface_mtu = local_salt_client.cmd(tgt=node,
+                                                  param='cat /sys/class/'
+                                                        'net/{}/mtu'.format(iface))
                 ifaces[iface] = iface_mtu.get(node)
         total[node] = ifaces
 

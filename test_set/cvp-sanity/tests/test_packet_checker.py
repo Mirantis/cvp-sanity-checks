@@ -5,13 +5,12 @@ import utils
 
 def test_check_package_versions(local_salt_client, nodes_in_group):
     exclude_packages = utils.get_configuration().get("skipped_packages", [])
-    packages_versions = local_salt_client.cmd("L@"+','.join(nodes_in_group),
-                                               'lowpkg.list_pkgs',
-                                               expr_form='compound')
+    packages_versions = local_salt_client.cmd(tgt="L@"+','.join(nodes_in_group),
+                                              fun='lowpkg.list_pkgs',
+                                              expr_form='compound')
     # Let's exclude cid01 and dbs01 nodes from this check
-    exclude_nodes = local_salt_client.cmd("I@galera:master or I@gerrit:client",
-                                          'test.ping',
-                                          expr_form='compound').keys()
+    exclude_nodes = local_salt_client.test_ping(tgt="I@galera:master or I@gerrit:client",
+                                                expr_form='compound').keys()
     total_nodes = [i for i in packages_versions.keys() if i not in exclude_nodes]
     if len(total_nodes) < 2:
         pytest.skip("Nothing to compare - only 1 node")
@@ -21,6 +20,10 @@ def test_check_package_versions(local_salt_client, nodes_in_group):
     packages_names = set()
 
     for node in total_nodes:
+        if not packages_versions[node]:
+            # TODO: do not skip node
+            print "Node {} is skipped".format (node)
+            continue
         nodes.append(node)
         packages_names.update(packages_versions[node].keys())
 
@@ -30,6 +33,8 @@ def test_check_package_versions(local_salt_client, nodes_in_group):
         diff = []
         row = []
         for node in nodes:
+            if not packages_versions[node]:
+                continue
             if deb in packages_versions[node].keys():
                 diff.append(packages_versions[node][deb])
                 row.append("{}: {}".format(node, packages_versions[node][deb]))
@@ -51,8 +56,8 @@ def test_packages_are_latest(local_salt_client, nodes_in_group):
         pytest.skip("Test for the latest packages is disabled")
     skipped_pkg = config.get("test_packages")["skipped_packages"]
     info_salt = local_salt_client.cmd(
-        'L@' + ','.join(nodes_in_group),
-        'cmd.run', ['apt list --upgradable 2>/dev/null | grep -v Listing'],
+        tgt='L@' + ','.join(nodes_in_group),
+        param='apt list --upgradable 2>/dev/null | grep -v Listing',
         expr_form='compound')
     for node in nodes_in_group:
         result = []
@@ -68,22 +73,20 @@ def test_packages_are_latest(local_salt_client, nodes_in_group):
 def test_check_module_versions(local_salt_client, nodes_in_group):
     exclude_modules = utils.get_configuration().get("skipped_modules", [])
     pre_check = local_salt_client.cmd(
-        "L@"+','.join(nodes_in_group),
-        'cmd.run',
-        ['dpkg -l | grep "python-pip "'],
+        tgt="L@"+','.join(nodes_in_group),
+        param='dpkg -l | grep "python-pip "',
         expr_form='compound')
     if pre_check.values().count('') > 0:
         pytest.skip("pip is not installed on one or more nodes")
 
-    exclude_nodes = local_salt_client.cmd("I@galera:master or I@gerrit:client",
-                                          'test.ping',
-                                          expr_form='compound').keys()
+    exclude_nodes = local_salt_client.test_ping(tgt="I@galera:master or I@gerrit:client",
+                                                expr_form='compound').keys()
     total_nodes = [i for i in pre_check.keys() if i not in exclude_nodes]
 
     if len(total_nodes) < 2:
         pytest.skip("Nothing to compare - only 1 node")
-    list_of_pip_packages = local_salt_client.cmd("L@"+','.join(nodes_in_group),
-                                   'pip.freeze', expr_form='compound')
+    list_of_pip_packages = local_salt_client.cmd(tgt="L@"+','.join(nodes_in_group),
+                                   param='pip.freeze', expr_form='compound')
 
     nodes = []
 

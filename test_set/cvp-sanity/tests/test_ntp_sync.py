@@ -5,15 +5,15 @@ import utils
 def test_ntp_sync(local_salt_client):
     """Test checks that system time is the same across all nodes"""
 
-    active_nodes = utils.get_active_nodes()
     config = utils.get_configuration()
     nodes_time = local_salt_client.cmd(
-        utils.list_to_target_string(active_nodes, 'or'),
-        'cmd.run',
-        ['date +%s'],
+        tgt='*',
+        param='date +%s',
         expr_form='compound')
     result = {}
     for node, time in nodes_time.iteritems():
+        if isinstance(nodes_time[node], bool):
+            time = 'Cannot access node(-s)'
         if node in config.get("ntp_skipped_nodes"):
             continue
         if time in result:
@@ -27,16 +27,17 @@ def test_ntp_sync(local_salt_client):
 
 def test_ntp_peers_state(local_salt_client):
     """Test gets ntpq peers state and checks the system peer is declared"""
-
-    active_nodes = utils.get_active_nodes()
     state = local_salt_client.cmd(
-        utils.list_to_target_string(active_nodes, 'or'),
-        'cmd.run',
-        ['ntpq -pn'],
+        tgt='*',
+        param='ntpq -pn',
         expr_form='compound')
     final_result = {}
     for node in state:
         sys_peer_declared = False
+        if not state[node]:
+            # TODO: do not skip
+            print ("Node {} is skipped".format(node))
+            continue
         ntpq_output = state[node].split('\n')
         # if output has no 'remote' in the head of ntpq output
         # the 'ntqp -np' command failed and cannot check peers

@@ -4,25 +4,19 @@ import json
 
 
 def test_oss_status(local_salt_client):
-    result = local_salt_client.cmd(
-        'docker:swarm:role:master',
-        'pillar.fetch',
-        ['haproxy:proxy:listen:stats:binds:address'],
-        expr_form='pillar')
-    HAPROXY_STATS_IP = [node for node in result if result[node]]
+    HAPROXY_STATS_IP = local_salt_client.pillar_get(
+        tgt='docker:swarm:role:master',
+        param='haproxy:proxy:listen:stats:binds:address')
     proxies = {"http": None, "https": None}
     csv_result = requests.get('http://{}:9600/haproxy?stats;csv"'.format(
-                              result[HAPROXY_STATS_IP[0]]),
+                              HAPROXY_STATS_IP),
                               proxies=proxies).content
     data = csv_result.lstrip('# ')
     wrong_data = []
     list_of_services = ['aptly', 'openldap', 'gerrit', 'jenkins', 'postgresql',
                         'pushkin', 'rundeck', 'elasticsearch']
     for service in list_of_services:
-        check = local_salt_client.cmd(
-            '{}:client'.format(service),
-            'test.ping',
-            expr_form='pillar')
+        check = local_salt_client.test_ping(tgt='{}:client'.format(service))
         if check:
             lines = [row for row in csv.DictReader(data.splitlines())
                      if service in row['pxname']]
