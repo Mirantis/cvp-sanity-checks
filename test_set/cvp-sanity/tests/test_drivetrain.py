@@ -207,7 +207,7 @@ def test_drivetrain_openldap(local_salt_client, check_cicd):
         '''Test user was not found'''
 
 
-def test_drivetrain_services_replicas(local_salt_client):
+def test_drivetrain_services_replicas(local_salt_client, check_cicd):
     """
         # Execute ` salt -C 'I@gerrit:client' cmd.run 'docker service ls'` command to get info  for each docker service like that:
         "x5nzktxsdlm6        jenkins_slave02     replicated          0/1                 docker-prod-local.artifactory.mirantis.com/mirantis/cicd/jnlp-slave:2019.2.0         "
@@ -272,7 +272,7 @@ def test_drivetrain_components_and_versions(local_salt_client, check_cicd):
               {}'''.format(json.dumps(mismatch, indent=4))
 
 
-def test_jenkins_jobs_branch(local_salt_client):
+def test_jenkins_jobs_branch(local_salt_client, check_cicd):
     """ This test compares Jenkins jobs versions
         collected from the cloud vs collected from pillars.
     """
@@ -282,8 +282,6 @@ def test_jenkins_jobs_branch(local_salt_client):
 
     config = utils.get_configuration()
     drivetrain_version = config.get('drivetrain_version', '')
-    if not drivetrain_version:
-        pytest.skip("drivetrain_version is not defined. Skipping")
     jenkins_password = get_password(local_salt_client, 'jenkins:client')
     version_mismatch = []
     server = join_to_jenkins(local_salt_client, 'admin', jenkins_password)
@@ -311,7 +309,7 @@ def test_jenkins_jobs_branch(local_salt_client):
             continue
 
         actual_version = BranchSpec[0].getElementsByTagName('name')[0].childNodes[0].data
-        if actual_version not in [expected_version, "release/{}".format(drivetrain_version)]:
+        if actual_version not in expected_version and expected_version != '':
             version_mismatch.append("Job {0} has {1} branch."
                                     "Expected {2}".format(job_name,
                                                           actual_version,
