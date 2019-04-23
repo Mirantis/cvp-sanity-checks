@@ -186,6 +186,7 @@ def test_public_ui_alerta(local_salt_client, ctl_nodes_pillar):
         'Public Alerta page is not reachable on {} from ctl nodes'.format(url)
 
 
+@pytest.mark.usefixtures('check_openstack')
 @pytest.mark.usefixtures('check_drivetrain')
 def test_public_ui_jenkins(local_salt_client, ctl_nodes_pillar):
     IP = local_salt_client.pillar_get(param='_param:cluster_public_host')
@@ -201,6 +202,7 @@ def test_public_ui_jenkins(local_salt_client, ctl_nodes_pillar):
         'Public Jenkins page is not reachable on {} from ctl nodes'.format(url)
 
 
+@pytest.mark.usefixtures('check_openstack')
 @pytest.mark.usefixtures('check_drivetrain')
 def test_public_ui_gerrit(local_salt_client, ctl_nodes_pillar):
     IP = local_salt_client.pillar_get(param='_param:cluster_public_host')
