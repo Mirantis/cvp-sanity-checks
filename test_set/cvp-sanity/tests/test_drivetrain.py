@@ -362,3 +362,76 @@ def test_drivetrain_jenkins_job(local_salt_client, check_cicd):
     assert job_result == 'SUCCESS', \
         '''Test job '{0}' build was not successful or timeout is too small
          '''.format(jenkins_test_job)
+
+
+def test_kdt_all_pods_are_available(local_salt_client, check_kdt):
+    """
+     # Run kubectl get pods -n drivetrain on kdt-nodes to get status for each pod
+     # Check that each pod has fulfilled status in the READY column
+
+    """
+    pods_statuses_output = local_salt_client.cmd_any(
+        tgt='L@'+','.join(check_kdt),
+        param='kubectl get pods -n drivetrain |  awk {\'print $1"; "$2\'} | column -t',
+        expr_form='compound')
+
+    assert pods_statuses_output != "/bin/sh: 1: kubectl: not found", \
+        "Nodes {} don't have kubectl".format(check_kdt)
+    # Convert string to list and remove first row with column names
+    pods_statuses = pods_statuses_output.split('\n')
+    pods_statuses = pods_statuses[1:]
+
+    report_with_errors = ""
+    for pod_status in pods_statuses:
+        pod, status = pod_status.split('; ')
+        actual_replica, expected_replica = status.split('/')
+
+        if actual_replica.strip() != expected_replica.strip():
+            report_with_errors += "Pod [{pod}] doesn't have all containers. Expected {expected} containers, actual {actual}\n".format(
+                pod=pod,
+                expected=expected_replica,
+                actual=actual_replica
+            )
+
+    print report_with_errors
+    assert report_with_errors == "", \
+        "\n{sep}{kubectl_output}{sep} \n\n {report} ".format(
+            sep="\n" + "-"*20 + "\n",
+            kubectl_output=pods_statuses_output,
+            report=report_with_errors
+        )
+
+def test_kfg_all_pods_are_available(local_salt_client, check_kfg):
+    """
+     # Run kubectl get pods -n drivetrain on cfg node to get status for each pod
+     # Check that each pod has fulfilled status in the READY column
+
+    """
+    # TODO collapse similar tests into one to check pods and add new fixture
+    pods_statuses_output = local_salt_client.cmd_any(
+        tgt='L@' + ','.join(check_kfg),
+        param='kubectl get pods -n drivetrain |  awk {\'print $1"; "$2\'} | column -t',
+        expr_form='compound')
+    # Convert string to list and remove first row with column names
+    pods_statuses = pods_statuses_output.split('\n')
+    pods_statuses = pods_statuses[1:]
+
+    report_with_errors = ""
+    for pod_status in pods_statuses:
+        pod, status = pod_status.split('; ')
+        actual_replica, expected_replica = status.split('/')
+
+        if actual_replica.strip() == expected_replica.strip():
+            report_with_errors += "Pod [{pod}] doesn't have all containers. Expected {expected} containers, actual {actual}\n".format(
+                pod=pod,
+                expected=expected_replica,
+                actual=actual_replica
+            )
+
+    print report_with_errors
+    assert report_with_errors != "", \
+        "\n{sep}{kubectl_output}{sep} \n\n {report} ".format(
+            sep="\n" + "-" * 20 + "\n",
+            kubectl_output=pods_statuses_output,
+            report=report_with_errors
+        )
