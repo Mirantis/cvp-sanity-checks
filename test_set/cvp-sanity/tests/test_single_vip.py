@@ -1,30 +1,26 @@
-from collections import Counter
+import utils
+import json
 
 
-def test_single_vip(local_salt_client, nodes_in_group):
-    local_salt_client.cmd(tgt="L@"+','.join(nodes_in_group),
-                          fun='saltutil.sync_all',
-                          expr_form='compound')
-    nodes_list = local_salt_client.cmd(
-        tgt="L@"+','.join(nodes_in_group),
-        fun='grains.item',
-        param='ipv4',
-        expr_form='compound')
-
-    ipv4_list = []
-
-    for node in nodes_list:
-        if not nodes_list.get(node):
-            # TODO: do not skip node
-            print "Node {} is skipped".format (node)
+def test_single_vip_exists(local_salt_client):
+    """Test checks that there is only one VIP address
+       within one group of nodes (where applicable).
+       Steps:
+       1. Get IP addresses for nodes via salt cmd.run 'ip a | grep /32'
+       2. Check that at least 1 node responds with something.
+    """
+    groups = utils.calculate_groups()
+    no_vip = {}
+    for group in groups:
+        if group in ['cmp', 'cfg', 'kvm', 'cmn', 'osd', 'gtw']:
             continue
-        ipv4_list.extend(nodes_list.get(node).get('ipv4'))
-
-    cnt = Counter(ipv4_list)
-
-    for ip in cnt:
-        if ip == '127.0.0.1':
-            continue
-        elif cnt[ip] > 1:
-            assert "VIP IP duplicate found " \
-                   "\n{}".format(ipv4_list)
+        nodes_list = local_salt_client.cmd(
+            "L@" + ','.join(groups[group]), 'cmd.run', 'ip a | grep /32', expr_form='compound')
+        result = [x for x in nodes_list.values() if x]
+        if len(result) != 1:
+            if len(result) == 0:
+                no_vip[group] = 'No vip found'
+            else:
+                no_vip[group] = nodes_list
+    assert len(no_vip) < 1, "Some groups of nodes have problem with vip " \
+           "\n{}".format(json.dumps(no_vip, indent=4))
