@@ -19,7 +19,8 @@ def test_mounted_file_systems(local_salt_client, nodes_in_group):
              "I@salt:control or "
              "I@prometheus:server and not I@influxdb:server or "
              "I@kubernetes:* and not I@etcd:* or "
-             "I@docker:host and not I@prometheus:server and not I@kubernetes:*",
+             "I@docker:host and not I@prometheus:server and not I@kubernetes:* or "
+             "I@gerrit:client and I@kubernetes:pool and not I@salt:master",
          expr_form='compound').keys()
 
     if len(mounts_by_nodes.keys()) < 2:
