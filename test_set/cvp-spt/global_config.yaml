@@ -23,6 +23,7 @@ image_name: "Ubuntu"
 skipped_nodes: []
 # example for Jenkins: networks=net1,net2
 networks: "10.101.0.0/24"
+external_network: ''
 HW_NODES: []
 CMP_HOSTS: []
 nova_timeout: 30

@@ -9,7 +9,7 @@ from novaclient import client as novaclient
 import os
 import random
 import time
-
+import utils
 
 class OfficialClientManager(object):
     """Manager that provides access to the official python clients for
@@ -241,15 +241,18 @@ class OSCliActions(object):
         return net
 
     def get_external_network(self):
-        networks = [
-            net for net in self.os_clients.network.list_networks()["networks"]
-            if net["admin_state_up"] and net["router:external"] and
-            len(net["subnets"])
-        ]
-        if networks:
-            ext_net = networks[0]
-        else:
-            ext_net = self.create_fake_external_network()
+        config = utils.get_configuration()
+        ext_net = config.get('external_network') or ''
+        if not ext_net:
+            networks = [
+                net for net in self.os_clients.network.list_networks()["networks"]
+                if net["admin_state_up"] and net["router:external"] and
+                len(net["subnets"])
+            ]
+            if networks:
+                ext_net = networks[0]
+            else:
+                ext_net = self.create_fake_external_network()
         return ext_net
 
     def create_flavor(self, name, ram=256, vcpus=1, disk=2):
