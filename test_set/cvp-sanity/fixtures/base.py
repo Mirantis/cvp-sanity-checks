@@ -102,11 +102,23 @@ def contrail(local_salt_client):
 @pytest.fixture(scope='session')
 def check_kdt(local_salt_client):
     kdt_nodes_available = local_salt_client.test_ping(
-        tgt="I@gerrit:client and I@kubernetes:pool",
+        tgt="I@gerrit:client and I@kubernetes:pool and not I@salt:master",
         expr_form='compound'
     )
     if not kdt_nodes_available:
         pytest.skip("No 'kdt' nodes found. Skipping this test...")
+    return kdt_nodes_available.keys()
+
+
+@pytest.fixture(scope='session')
+def check_kfg(local_salt_client):
+    kfg_nodes_available = local_salt_client.cmd(
+        tgt="I@kubernetes:pool and I@salt:master",
+        expr_form='compound'
+    )
+    if not kfg_nodes_available:
+        pytest.skip("No cfg-under-Kubernetes nodes found. Skipping this test...")
+    return kfg_nodes_available.keys()
 
 
 @pytest.fixture(scope='session')
