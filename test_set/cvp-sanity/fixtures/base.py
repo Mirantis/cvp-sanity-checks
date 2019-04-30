@@ -80,6 +80,14 @@ def check_grafana(local_salt_client):
           are not found on this environment.")
 
 
+@pytest.fixture(scope='session')
+def check_cinder_backends(local_salt_client):
+    backends_cinder_available = local_salt_client.test_ping(tgt='cinder:controller')
+    if not backends_cinder_available or not any(backends_cinder_available.values()):
+        pytest.skip("Cinder service or cinder:controller:backend pillar \
+        are not found on this environment.")
+
+
 def pytest_namespace():
     return {'contrail': None}
 
