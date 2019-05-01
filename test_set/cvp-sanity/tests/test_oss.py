@@ -3,7 +3,15 @@ import csv
 import json
 
 
-def test_oss_status(local_salt_client):
+def test_oss_status(local_salt_client, check_cicd):
+    """
+       # Get IP of HAPROXY interface from pillar using 'salt -C "I@docker:swarm:role:master" pillar.get haproxy:proxy:listen:stats:binds:address'
+       # Read info from web-page "http://{haproxy:proxy:listen:stats:binds:address}:9600/haproxy?stats;csv"
+       # Check that each service from list 'aptly', 'openldap', 'gerrit', 'jenkins', 'postgresql',
+                                'pushkin', 'rundeck', 'elasticsearch' :
+                * has UP status
+                * has OPEN status
+    """
     HAPROXY_STATS_IP = local_salt_client.pillar_get(
         tgt='docker:swarm:role:master',
         param='haproxy:proxy:listen:stats:binds:address')
