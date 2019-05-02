@@ -13,7 +13,7 @@ def get_contrail_status(salt_client, pillar, command, processor):
         expr_form='pillar'
     )
 
-def test_contrail_compute_status(local_salt_client):
+def test_contrail_compute_status(local_salt_client, check_openstack):
     cs = get_contrail_status(local_salt_client, 'nova:compute',
                              STATUS_COMMAND, STATUS_FILTER)
     broken_services = []
@@ -37,7 +37,7 @@ def test_contrail_compute_status(local_salt_client):
                                                              indent=4))
 
 
-def test_contrail_node_status(local_salt_client):
+def test_contrail_node_status(local_salt_client, check_openstack):
     command = STATUS_COMMAND
 
     # TODO: what will be in OpenContrail 5?
@@ -67,7 +67,7 @@ def test_contrail_node_status(local_salt_client):
                                                              indent=4))
 
 
-def test_contrail_vrouter_count(local_salt_client):
+def test_contrail_vrouter_count(local_salt_client, check_openstack):
     cs = get_contrail_status(local_salt_client, 'nova:compute',
                              STATUS_COMMAND, STATUS_FILTER)
 
@@ -87,7 +87,7 @@ def test_contrail_vrouter_count(local_salt_client):
                                                       len(cs.keys()))
 
 
-def test_public_ui_contrail(local_salt_client, ctl_nodes_pillar):
+def test_public_ui_contrail(local_salt_client, ctl_nodes_pillar, check_openstack):
     IP = local_salt_client.pillar_get(param='_param:cluster_public_host')
     protocol = 'https'
     port = '8143'
