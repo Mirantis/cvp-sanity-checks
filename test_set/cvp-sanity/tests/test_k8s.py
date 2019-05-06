@@ -1,6 +1,7 @@
 import pytest
 import json
 import os
+import logging
 
 
 def test_k8s_get_cs_status(local_salt_client):
@@ -139,9 +140,9 @@ def test_check_k8s_image_availability(local_salt_client):
     hostname = 'https://docker-dev-virtual.docker.mirantis.net/artifactory/webapp/'
     response = os.system('curl -s --insecure {} > /dev/null'.format(hostname))
     if response == 0:
-        print '{} is AVAILABLE'.format(hostname)
+        logging.info('{} is AVAILABLE'.format(hostname))
     else:
-        print '{} IS NOT AVAILABLE'.format(hostname)
+        logging.error('{} IS NOT AVAILABLE'.format(hostname))
 
 
 def test_k8s_dashboard_available(local_salt_client):

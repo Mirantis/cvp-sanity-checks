@@ -1,6 +1,7 @@
 import json
 import utils
 import pytest
+import logging
 
 
 @pytest.mark.xfail
@@ -41,7 +42,7 @@ def test_ntp_peers_state(local_salt_client):
         sys_peer_declared = False
         if not state[node]:
             # TODO: do not skip
-            print ("Node {} is skipped".format(node))
+            logging.warning("Node {} is skipped".format(node))
             continue
         ntpq_output = state[node].split('\n')
         # if output has no 'remote' in the head of ntpq output

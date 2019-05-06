@@ -1,5 +1,6 @@
 import json
 import pytest
+import logging
 
 
 @pytest.mark.full

@@ -4,6 +4,9 @@ import requests
 import re
 import sys, traceback
 import time
+import json
+import pytest
+import logging
 
 
 class AuthenticationError(Exception):
@@ -17,7 +20,7 @@ class salt_remote:
         self.url = self.config['SALT_URL'].strip()
         if not re.match("^(http|https)://", self.url):
             raise AuthenticationError("Salt URL should start \
-            with http or https, given - {}".format(url))
+            with http or https, given - {}".format(self.url))
         self.login_payload = {'username': self.config['SALT_USERNAME'],
                               'password': self.config['SALT_PASSWORD'], 'eauth': 'pam'}
         # TODO: proxies
@@ -36,11 +39,11 @@ class salt_remote:
             if not login_request.ok:
                 raise AuthenticationError("Authentication to SaltMaster failed")
         except Exception as e:
-            print ("\033[91m\nConnection to SaltMaster "
-                  "was not established.\n"
-                  "Please make sure that you "
-                  "provided correct credentials.\n"
-                  "Error message: {}\033[0m\n".format(e.message or e))
+            logging.warning("\033[91m\nConnection to SaltMaster "
+                            "was not established.\n"
+                            "Please make sure that you "
+                            "provided correct credentials.\n"
+                            "Error message: {}\033[0m\n".format(e.message or e))
             traceback.print_exc(file=sys.stdout)
             sys.exit()
         self.expire = login_request.json()['return'][0]['expire']
@@ -57,20 +60,28 @@ class salt_remote:
             accept_key_payload['arg'] = param
 
         for i in range(retries):
+            logging.info("="*100)
+            logging.info("Send Request: {}".format(json.dumps(
+                accept_key_payload,
+                indent=4,
+                sort_keys=True)))
             request = requests.post(self.url, headers=self.headers,
                                     data=accept_key_payload,
                                     cookies=self.cookies,
                                     proxies=self.proxies)
+            logging.info("-"*100)
+            logging.info("Response: {}".format(json.dumps(
+                                request.json(),
+                                indent=4
+            )))
             if not request.ok or not isinstance(request.json()['return'][0], dict):
-                print("Salt master is not responding or response is incorrect. Output: {}".format(request))
+                logging.warning("Salt master is not responding or response is incorrect. Output: {}".format(request))
                 continue
             response = request.json()['return'][0]
             result = {key: response[key] for key in response if key not in self.skipped_nodes}
-            if check_status:
-                if False in result.values():
-                    print(
-                         "One or several nodes are not responding. Output {}".format(json.dumps(result, indent=4)))
-                    continue
+            if check_status and False in result.values():
+                logging.warning("One or several nodes are not responding. Output {}".format(json.dumps(result, indent=4)))
+                continue
             break
         else:
             raise Exception("Error with Salt Master response")
@@ -124,8 +135,7 @@ def calculate_groups():
     node_groups = {}
     nodes_names = set ()
     expr_form = ''
-    all_nodes = set(local_salt_client.test_ping(tgt='*',expr_form=None))
-    print all_nodes
+    all_nodes = set(local_salt_client.test_ping(tgt='*', expr_form=None))
     if 'groups' in config.keys() and 'PB_GROUPS' in os.environ.keys() and \
        os.environ['PB_GROUPS'].lower() != 'false':
         nodes_names.update(config['groups'].keys())
@@ -140,11 +150,11 @@ def calculate_groups():
         expr_form = 'pcre'
 
     gluster_nodes = local_salt_client.test_ping(tgt='I@salt:control and '
-                                          'I@glusterfs:server',
-                                           expr_form='compound')
+                                                    'I@glusterfs:server',
+                                                expr_form='compound')
     kvm_nodes = local_salt_client.test_ping(tgt='I@salt:control and not '
-                                      'I@glusterfs:server',
-                                       expr_form='compound')
+                                                'I@glusterfs:server',
+                                            expr_form='compound')
 
     for node_name in nodes_names:
         skipped_groups = config.get('skipped_groups') or []
@@ -152,17 +162,17 @@ def calculate_groups():
             continue
         if expr_form == 'pcre':
             nodes = local_salt_client.test_ping(tgt='{}[0-9]{{1,3}}'.format(node_name),
-                                                 expr_form=expr_form)
+                                                expr_form=expr_form)
         else:
             nodes = local_salt_client.test_ping(tgt=config['groups'][node_name],
-                                                 expr_form=expr_form)
+                                                expr_form=expr_form)
             if nodes == {}:
                 continue
 
-        node_groups[node_name]=[x for x in nodes
-                                if x not in config['skipped_nodes']
-                                if x not in gluster_nodes.keys()
-                                if x not in kvm_nodes.keys()]
+        node_groups[node_name] = [x for x in nodes
+                                  if x not in config['skipped_nodes']
+                                  if x not in gluster_nodes.keys()
+                                  if x not in kvm_nodes.keys()]
         all_nodes = set(all_nodes - set(node_groups[node_name]))
         if node_groups[node_name] == []:
             del node_groups[node_name]
@@ -172,10 +182,10 @@ def calculate_groups():
     all_nodes = set(all_nodes - set(kvm_nodes.keys()))
     all_nodes = set(all_nodes - set(gluster_nodes.keys()))
     if all_nodes:
-        print ("These nodes were not collected {0}. Check config (groups section)".format(all_nodes))
+        logging.info("These nodes were not collected {0}. Check config (groups section)".format(all_nodes))
     return node_groups
-                
-            
+
+
 def get_configuration():
     """function returns configuration for environment
     and for test if it's specified"""

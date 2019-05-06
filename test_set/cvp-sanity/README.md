@@ -4,7 +4,8 @@ MCP sanity checks
 This is salt-based set of tests for basic verification of MCP deployments
 
 How to start
-=======================
+---
+*Target: test engineers*
 
 1) Clone repo to any node (node must have an access via http to salt master):
 ```bash
@@ -22,7 +23,7 @@ if needed.
    # sudo python setup.py install
 ```
 or
-1```bash
+```bash
    # apt-get install python-virtualenv
 ```
 
@@ -71,3 +72,43 @@ Example (run smoke tests only):
 ```bash
    # pytest -v -m smoke
 ```
+Logging
+---
+*Target: test developers*
+
+To make a logging in the cvp-sanity-tests module more consistent you should follow next recommendations:
++ Do not use **print** methods
+
++ Each string that needs to be in the stdout should be called with logging.warning level and higher
+```python
+import logging
+
+def test_t1():
+    logging.warning("Alert: Houston we have a problem!")
+    logging.error("We've lost a booster!")
+    logging.critical("Everything is broken!")
+```
+So these messages will be displayed in the pytest output after failed tests
+
++ Use  logging.info and logging.debug to log some trivial string. E.g saving requests/responses, saving states os some variables 
+```python
+import logging
+
+def test_t2():
+    logging.info("Skip {node} in this test")
+    logging.debug("Some function is called")
+```
+These messages will be logged in the log file only. You can forcely enable logging in the sdtout by calling pytest with next parameter
+```bash
+pytest --log-level=DEBUG
+```
+
+Logging to file
+---
+
+By default full.log is located in the working directory.
+And you can define folder for logs to store by the PYTEST_REPORT_DIR environment variable
+
+List of available environment variables
+===
+todo

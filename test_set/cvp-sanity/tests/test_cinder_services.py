@@ -1,4 +1,5 @@
 import pytest
+import logging
 
 
 @pytest.mark.sl_dup
@@ -28,8 +29,6 @@ def test_cinder_services_has_all_backends(local_salt_client, check_cinder_backen
     cinder_volume = local_salt_client.cmd_any(
         tgt='keystone:server',
         param='. /root/keystonercv3; cinder service-list | grep "volume" |grep -c -v -e "lvm"')
-    print(backends_cinder)
-    print(cinder_volume)
     backends_num = len(backends_cinder.keys())
     assert cinder_volume == str(backends_num), \
         'Number of cinder-volume services ({0}) does not match ' \

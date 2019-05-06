@@ -2,6 +2,7 @@ from collections import Counter
 from pprint import pformat
 import os
 import pytest
+import logging
 import utils
 
 
@@ -32,7 +33,7 @@ def test_duplicate_ips(local_salt_client):
     for node in nodes:
         if isinstance(nodes[node], bool):
             # TODO: do not skip node
-            print ("{} node is skipped".format(node))
+            logging.info("{} node is skipped".format(node))
             continue
         for iface in nodes[node]['ip4_interfaces']:
             # Omit 'ip-less' ifaces

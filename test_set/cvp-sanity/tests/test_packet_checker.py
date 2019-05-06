@@ -1,6 +1,7 @@
 import pytest
 import json
 import utils
+import logging
 
 
 @pytest.mark.full
@@ -23,7 +24,7 @@ def test_check_package_versions(local_salt_client, nodes_in_group):
     for node in total_nodes:
         if not packages_versions[node]:
             # TODO: do not skip node
-            print "Node {} is skipped".format (node)
+            logging.warning("Node {} is skipped".format(node))
             continue
         nodes.append(node)
         packages_names.update(packages_versions[node].keys())

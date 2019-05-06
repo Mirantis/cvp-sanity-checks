@@ -1,4 +1,5 @@
 from fixtures.base import *
+import logging
 
 
 @pytest.hookimpl(tryfirst=True, hookwrapper=True)
@@ -20,10 +21,10 @@ def show_test_steps(request):
         return
     try:
         if request.node.rep_setup.failed:
-            print("setup failed. The following steps were attempted: \n  {steps}".format(steps=request.node.description))
+            logging.warning("setup failed. The following steps were attempted: \n  {steps}".format(steps=request.node.description))
         elif request.node.rep_setup.passed:
             if request.node.rep_call.failed:
-                print("test execution failed! The following steps were attempted: \n {steps}".format(steps=request.node.description))
+                logging.warning("test execution failed! The following steps were attempted: \n {steps}".format(steps=request.node.description))
     except BaseException as e:
-        print("Error in show_test_steps fixture: {}".format(e))
+        logging.info("Error in show_test_steps fixture: {}".format(e))
         pass

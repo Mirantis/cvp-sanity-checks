@@ -1,11 +1,30 @@
+import os
 import pytest
 import atexit
 import utils
+import logging
+
+logging.basicConfig(
+    filename="{dir}/full.log".format(
+        dir=os.environ.get("PYTEST_REPORT_DIR") if os.environ.get("PYTEST_REPORT_DIR") else '.'
+    ),
+    level=logging.DEBUG,
+    format='[%(asctime)-15s] [%(funcName)s:%(lineno)s]  %(message)s'
+)
+
+
+@pytest.fixture(autouse=True)
+def add_testname_to_saltapi_logs(request):
+    logging.info("\n{sep}\n {testname} \n{sep}\n".format(
+        sep="*"*100,
+        testname=request.node.name
+    ))
 
 
 @pytest.fixture(scope='session')
 def local_salt_client():
     return utils.init_salt_client()
+
 
 nodes = utils.calculate_groups()
 
@@ -174,9 +193,9 @@ def print_node_version(local_salt_client):
             report_text += template.format(node, *[item.split("=")[1] for item in data])
 
         def write_report():
-            print(report_text)
+            logging.info(report_text)
         atexit.register(write_report)
         yield
     except Exception as e:
-        print("print_node_version:: some error occurred: {}".format(e))
+        logging.info("print_node_version:: some error occurred: {}".format(e))
         yield
