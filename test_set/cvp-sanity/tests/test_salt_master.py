@@ -1,5 +1,6 @@
 import json
 import pytest
+import logging
 
 
 @pytest.mark.full
@@ -36,7 +37,7 @@ def test_reclass_nodes(local_salt_client):
         expr_form='pillar', check_status=True).values()[0]
     reclass_warnings = reclass[reclass.keys()[0]].split('{\n  "base":')[0]
     if reclass_warnings:
-        print "\nReclass-salt output has warnings"
+        logging.warning("\nReclass-salt output has warnings: {}".format(reclass_warnings))
     reclass_nodes = reclass[reclass.keys()[0]].split('{\n  "base":')[1]
     assert reclass_nodes != '', 'No nodes were found in' \
                                 ' reclass-salt --top output'

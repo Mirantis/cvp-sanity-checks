@@ -2,6 +2,7 @@ import pytest
 import json
 import utils
 import os
+import logging
 
 
 @pytest.mark.full
@@ -23,7 +24,7 @@ def test_mtu(local_salt_client, nodes_in_group):
 
     for node, ifaces_info in network_info.iteritems():
         if isinstance(ifaces_info, bool):
-            print ("{} node is skipped".format(node))
+            logging.info("{} node is skipped".format(node))
             continue
         if node in kvm_nodes:
             kvm_info = local_salt_client.cmd(tgt=node,

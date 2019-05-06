@@ -10,7 +10,7 @@ from requests import HTTPError
 import git
 import ldap
 import ldap.modlist as modlist
-
+import logging
 
 def join_to_gerrit(local_salt_client, gerrit_user, gerrit_password):
     gerrit_port = local_salt_client.pillar_get(
@@ -73,7 +73,7 @@ def test_drivetrain_gerrit(local_salt_client, check_cicd):
         #Create test project and add description
         server.put("/projects/"+test_proj_name)
         server.put("/projects/"+test_proj_name+"/description",json={"description":"Test DriveTrain project","commit_message": "Update the project description"})
-    except HTTPError, e:
+    except HTTPError as e:
         gerrit_error = e
     try:
         #Create test folder and init git
@@ -98,7 +98,7 @@ def test_drivetrain_gerrit(local_salt_client, check_cicd):
         last_change = changes[0].get('change_id')
         server.post("/changes/{0}/revisions/1/review".format(last_change),json={"message": "All is good","labels":{"Code-Review":"+2"}})
         server.post("/changes/{0}/submit".format(last_change))
-    except HTTPError, e:
+    except HTTPError as e:
         gerrit_error = e
     finally:
         #Delete test project
@@ -174,7 +174,7 @@ def test_drivetrain_openldap(local_salt_client, check_cicd):
         #Check search test user in LDAP
         searchScope = ldap.SCOPE_SUBTREE
         ldap_result = ldap_server.search_s(ldap_dc, searchScope, searchFilter)
-    except ldap.LDAPError, e:
+    except ldap.LDAPError as e:
         ldap_error = e
     try:
         #Check connection between Jenkins and LDAP
@@ -188,9 +188,9 @@ def test_drivetrain_openldap(local_salt_client, check_cicd):
         gerrit_add_user = gerrit_server.put(_link)
         gerrit_server = join_to_gerrit(local_salt_client,test_user_name,'aSecretPassw')
         gerrit_result = gerrit_server.get("/changes/?q=owner:self%20status:open")
-    except HTTPError, e:
+    except HTTPError as e:
         gerrit_error = e
-    except jenkins.JenkinsException, e:
+    except jenkins.JenkinsException as e:
         jenkins_error = e
     finally:
         ldap_server.modify_s(admin_gr_dn,[(ldap.MOD_DELETE, 'memberUid', [test_user_name],)],)
@@ -233,7 +233,7 @@ def test_drivetrain_services_replicas(local_salt_client, check_cicd):
         if len(wrong_items) == 0:
             break
         else:
-            print('''Some DriveTrain services doesn't have expected number of replicas:
+            logging.error('''Some DriveTrain services doesn't have expected number of replicas:
                   {}\n'''.format(json.dumps(wrong_items, indent=4)))
             time.sleep(5)
     assert len(wrong_items) == 0
@@ -312,7 +312,7 @@ def test_jenkins_jobs_branch(local_salt_client, check_cicd):
                 param='jenkins:client:job:{}:scm:branch'.format(job_name))
 
         if not BranchSpec:
-            print("No BranchSpec has found for {} job".format(job_name))
+            logging.debug("No BranchSpec has found for {} job".format(job_name))
             continue
 
         actual_version = BranchSpec[0].getElementsByTagName('name')[0].childNodes[0].data
@@ -400,8 +400,6 @@ def test_kdt_all_pods_are_available(local_salt_client, check_kdt):
                 expected=expected_replica,
                 actual=actual_replica
             )
-
-    print report_with_errors
     assert report_with_errors == "", \
         "\n{sep}{kubectl_output}{sep} \n\n {report} ".format(
             sep="\n" + "-"*20 + "\n",
@@ -437,8 +435,6 @@ def test_kfg_all_pods_are_available(local_salt_client, check_kfg):
                 expected=expected_replica,
                 actual=actual_replica
             )
-
-    print report_with_errors
     assert report_with_errors != "", \
         "\n{sep}{kubectl_output}{sep} \n\n {report} ".format(
             sep="\n" + "-" * 20 + "\n",

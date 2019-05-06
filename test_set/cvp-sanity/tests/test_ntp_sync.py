@@ -1,10 +1,11 @@
 import json
 import utils
 import pytest
+import logging
 
 
 @pytest.mark.smoke
-#move to sl?
+# move to sl?
 def test_ntp_sync(local_salt_client):
     """Test checks that system time is the same across all nodes"""
 
@@ -40,7 +41,7 @@ def test_ntp_peers_state(local_salt_client):
         sys_peer_declared = False
         if not state[node]:
             # TODO: do not skip
-            print ("Node {} is skipped".format(node))
+            logging.warning("Node {} is skipped".format(node))
             continue
         ntpq_output = state[node].split('\n')
         # if output has no 'remote' in the head of ntpq output

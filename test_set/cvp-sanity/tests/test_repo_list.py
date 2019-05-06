@@ -1,4 +1,5 @@
 import pytest
+import logging
 
 
 @pytest.mark.full
@@ -15,7 +16,7 @@ def test_list_of_repo_on_nodes(local_salt_client, nodes_in_group):
         repos = info_salt[node]
         if not info_salt[node]:
             # TODO: do not skip node
-            print "Node {} is skipped".format (node)
+            logging.warning("Node {} is skipped".format(node))
             continue
         for repo in repos.keys():
             repository = repos[repo]
@@ -60,4 +61,4 @@ def test_list_of_repo_on_nodes(local_salt_client, nodes_in_group):
         "Several problems found: {0}".format(
             json.dumps(diff, indent=4))
     if fail_counter == 0 and len(diff) > 0:
-        print "\nWarning: nodes contain more repos than reclass"
+        logging.warning("\nWarning: nodes contain more repos than reclass")

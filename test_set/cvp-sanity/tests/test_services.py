@@ -1,6 +1,7 @@
 import pytest
 import json
 import utils
+import logging
 
 # Some nodes can have services that are not applicable for other nodes in similar group.
 # For example , there are 3 node in kvm group, but just kvm03 node has srv-volumes-backup.mount service
@@ -30,7 +31,7 @@ def test_check_services(local_salt_client, nodes_in_group):
     for node in services_by_nodes:
         if not services_by_nodes[node]:
             # TODO: do not skip node
-            print "Node {} is skipped".format (node)
+            logging.info("Node {} is skipped".format (node))
             continue
         nodes.append(node)
         all_services.update(services_by_nodes[node])
