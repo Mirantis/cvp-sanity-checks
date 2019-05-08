@@ -145,7 +145,7 @@ def test_check_k8s_image_availability(local_salt_client):
 
 
 @pytest.mark.xfail
-def test_k8s_dashboard_available(local_salt_client):
+def test_k8s_dashboard_available(local_salt_client, contrail):
     """
         # Check is kubernetes enabled on the cluster with command  `salt -C 'etcd:server' cmd.run 'kubectl get svc -n kube-system'`
         # If yes then check Dashboard addon with next command: `salt -C 'etcd:server' pillar.get kubernetes:common:addons:dashboard:enabled`
