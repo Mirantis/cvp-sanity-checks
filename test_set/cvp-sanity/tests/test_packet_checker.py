@@ -3,6 +3,7 @@ import json
 import utils
 
 
+@pytest.mark.full
 def test_check_package_versions(local_salt_client, nodes_in_group):
     exclude_packages = utils.get_configuration().get("skipped_packages", [])
     packages_versions = local_salt_client.cmd(tgt="L@"+','.join(nodes_in_group),
@@ -49,6 +50,7 @@ def test_check_package_versions(local_salt_client, nodes_in_group):
         json.dumps(pkts_data, indent=4))
 
 
+@pytest.mark.full
 def test_packages_are_latest(local_salt_client, nodes_in_group):
     config = utils.get_configuration()
     skip = config.get("test_packages")["skip_test"]
@@ -70,6 +72,7 @@ def test_packages_are_latest(local_salt_client, nodes_in_group):
             node, "\n".join(result))
 
 
+@pytest.mark.full
 def test_check_module_versions(local_salt_client, nodes_in_group):
     exclude_modules = utils.get_configuration().get("skipped_modules", [])
     pre_check = local_salt_client.cmd(

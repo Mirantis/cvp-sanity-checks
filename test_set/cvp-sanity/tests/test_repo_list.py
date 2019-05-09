@@ -1,3 +1,7 @@
+import pytest
+
+
+@pytest.mark.full
 def test_list_of_repo_on_nodes(local_salt_client, nodes_in_group):
     # TODO: pillar.get
     info_salt = local_salt_client.cmd(tgt='L@' + ','.join(

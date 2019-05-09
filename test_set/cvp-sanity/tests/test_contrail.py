@@ -13,6 +13,9 @@ def get_contrail_status(salt_client, pillar, command, processor):
         expr_form='pillar'
     )
 
+@pytest.mark.sl_dup
+#ContrailApiDown, ContrailApiDownMinor
+@pytest.mark.full
 def test_contrail_compute_status(local_salt_client, check_openstack):
     cs = get_contrail_status(local_salt_client, 'nova:compute',
                              STATUS_COMMAND, STATUS_FILTER)
@@ -36,7 +39,7 @@ def test_contrail_compute_status(local_salt_client, check_openstack):
                                                              broken_services,
                                                              indent=4))
 
-
+@pytest.mark.smoke
 def test_contrail_node_status(local_salt_client, check_openstack):
     command = STATUS_COMMAND
 
@@ -66,7 +69,7 @@ def test_contrail_node_status(local_salt_client, check_openstack):
                                                              broken_services,
                                                              indent=4))
 
-
+@pytest.mark.smoke
 def test_contrail_vrouter_count(local_salt_client, check_openstack):
     cs = get_contrail_status(local_salt_client, 'nova:compute',
                              STATUS_COMMAND, STATUS_FILTER)
@@ -86,7 +89,7 @@ def test_contrail_vrouter_count(local_salt_client, check_openstack):
         ' from the length of compute nodes {}'.format(actual_vrouter_count,
                                                       len(cs.keys()))
 
-
+@pytest.mark.smoke
 def test_public_ui_contrail(local_salt_client, ctl_nodes_pillar, check_openstack):
     IP = local_salt_client.pillar_get(param='_param:cluster_public_host')
     protocol = 'https'

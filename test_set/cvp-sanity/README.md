@@ -52,7 +52,7 @@ export SALT_URL=http://10.0.0.1:6969
 ```
 For array-type settings please do:
 ```bash
-export skipped_nodes='ctl01.example.com,ctl02.example.com'
+export skipped_nodes=ctl01.example.com,ctl02.example.com
 ```
 
 5) Start tests:
@@ -62,4 +62,12 @@ export skipped_nodes='ctl01.example.com,ctl02.example.com'
 or
 ```bash
    # pytest -sv cvp-sanity/tests/ --ignore cvp-sanity/tests/test_mtu.py
+```
+CVP-sanity-checks supports tags (labels/marks/sets). As of now we have smoke,
+full and sl_dup sets. Smoke will run essential tests only, full set runs all
+tests and sl_dup is a special set that collects the tests that already exist in
+Stacklight. Please do not forget to mark your test when you add it.
+Example (run smoke tests only):
+```bash
+   # pytest -v -m smoke
 ```

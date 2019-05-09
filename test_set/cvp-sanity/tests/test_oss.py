@@ -1,8 +1,11 @@
 import requests
 import csv
 import json
+import pytest
 
 
+@pytest.mark.full
+#probably in sl
 def test_oss_status(local_salt_client, check_cicd):
     """
        # Get IP of HAPROXY interface from pillar using 'salt -C "I@docker:swarm:role:master" pillar.get haproxy:proxy:listen:stats:binds:address'

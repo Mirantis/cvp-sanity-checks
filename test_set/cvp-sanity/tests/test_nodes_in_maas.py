@@ -18,6 +18,7 @@ def login_to_maas(local_salt_client, user):
     return login
 
 
+@pytest.mark.full
 def test_nodes_deployed_in_maas(local_salt_client):
     config = utils.get_configuration()
 

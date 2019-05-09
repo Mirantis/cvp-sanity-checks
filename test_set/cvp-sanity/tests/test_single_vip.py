@@ -3,6 +3,7 @@ import json
 import pytest
 
 
+@pytest.mark.smoke
 def test_single_vip_exists(local_salt_client):
     """Test checks that there is only one VIP address
        within one group of nodes (where applicable).

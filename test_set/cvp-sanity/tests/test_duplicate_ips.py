@@ -1,7 +1,7 @@
 from collections import Counter
 from pprint import pformat
 import os
-
+import pytest
 import utils
 
 
@@ -14,6 +14,7 @@ def get_duplicate_ifaces(nodes, ips):
     return dup_ifaces
 
 
+@pytest.mark.smoke
 def test_duplicate_ips(local_salt_client):
     testname = os.path.basename(__file__).split('.')[0]
     config = utils.get_configuration()

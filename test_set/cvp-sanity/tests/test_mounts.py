@@ -2,6 +2,8 @@ import json
 import pytest
 
 
+@pytest.mark.smoke
+#full?
 def test_mounted_file_systems(local_salt_client, nodes_in_group):
     """
         # Get all mount points from each node in the group  with the next command: `df -h | awk '{print $1}'`

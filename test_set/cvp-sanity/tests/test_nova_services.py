@@ -1,6 +1,8 @@
 import pytest
 
 
+@pytest.mark.sl_dup
+@pytest.mark.full
 @pytest.mark.usefixtures('check_openstack')
 def test_nova_services_status(local_salt_client):
     result = local_salt_client.cmd_any(
@@ -12,6 +14,7 @@ def test_nova_services_status(local_salt_client):
         '''Some nova services are in wrong state'''
 
 
+@pytest.mark.smoke
 @pytest.mark.usefixtures('check_openstack')
 def test_nova_hosts_consistent(local_salt_client):
     all_cmp_services = local_salt_client.cmd_any(

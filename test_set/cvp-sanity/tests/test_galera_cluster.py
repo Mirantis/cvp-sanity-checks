@@ -1,6 +1,10 @@
 import pytest
 
 
+@pytest.mark.sl_dup
+#GaleraServiceDown
+#TODO: a better test
+@pytest.mark.full
 def test_galera_cluster_status(local_salt_client):
     gs = local_salt_client.cmd(
         tgt='galera:*',

@@ -1,6 +1,7 @@
 import pytest
 
 
+@pytest.mark.smoke
 @pytest.mark.usefixtures('check_openstack')
 def test_ui_horizon(local_salt_client, ctl_nodes_pillar):
     IP = local_salt_client.pillar_get(
@@ -18,6 +19,7 @@ def test_ui_horizon(local_salt_client, ctl_nodes_pillar):
         IP[0])
 
 
+@pytest.mark.smoke
 @pytest.mark.usefixtures('check_openstack')
 def test_public_openstack(local_salt_client, ctl_nodes_pillar):
     IP = local_salt_client.pillar_get(param='_param:cluster_public_host')
@@ -33,6 +35,9 @@ def test_public_openstack(local_salt_client, ctl_nodes_pillar):
         'Public Openstack url is not reachable on {} from ctl nodes'.format(url)
 
 
+@pytest.mark.sl_dup
+#stacklight-pytest?
+@pytest.mark.full
 @pytest.mark.usefixtures('check_kibana')
 def test_internal_ui_kibana(local_salt_client, ctl_nodes_pillar):
     IP = local_salt_client.pillar_get(param='_param:stacklight_log_address')
@@ -49,6 +54,7 @@ def test_internal_ui_kibana(local_salt_client, ctl_nodes_pillar):
         'from ctl nodes'.format(url)
 
 
+@pytest.mark.smoke
 @pytest.mark.usefixtures('check_kibana')
 def test_public_ui_kibana(local_salt_client, ctl_nodes_pillar):
     IP = local_salt_client.pillar_get(param='_param:cluster_public_host')
@@ -65,6 +71,9 @@ def test_public_ui_kibana(local_salt_client, ctl_nodes_pillar):
         'from ctl nodes'.format(url)
 
 
+@pytest.mark.sl_dup
+#stacklight-pytest?
+@pytest.mark.full
 @pytest.mark.usefixtures('check_prometheus')
 def test_internal_ui_prometheus(local_salt_client, ctl_nodes_pillar):
     IP = local_salt_client.pillar_get(param='_param:stacklight_monitor_address')
@@ -81,6 +90,7 @@ def test_internal_ui_prometheus(local_salt_client, ctl_nodes_pillar):
         'from ctl nodes'.format(url)
 
 
+@pytest.mark.smoke
 @pytest.mark.usefixtures('check_prometheus')
 def test_public_ui_prometheus(local_salt_client, ctl_nodes_pillar):
     IP = local_salt_client.pillar_get(param='_param:cluster_public_host')
@@ -97,6 +107,9 @@ def test_public_ui_prometheus(local_salt_client, ctl_nodes_pillar):
         'from ctl nodes'.format(url)
 
 
+@pytest.mark.sl_dup
+#stacklight-pytest?
+@pytest.mark.full
 @pytest.mark.usefixtures('check_prometheus')
 def test_internal_ui_alert_manager(local_salt_client, ctl_nodes_pillar):
     IP = local_salt_client.pillar_get(param='_param:stacklight_monitor_address')
@@ -112,6 +125,7 @@ def test_internal_ui_alert_manager(local_salt_client, ctl_nodes_pillar):
         'from ctl nodes'.format(url)
 
 
+@pytest.mark.smoke
 @pytest.mark.usefixtures('check_prometheus')
 def test_public_ui_alert_manager(local_salt_client, ctl_nodes_pillar):
     IP = local_salt_client.pillar_get(param='_param:cluster_public_host')
@@ -127,6 +141,9 @@ def test_public_ui_alert_manager(local_salt_client, ctl_nodes_pillar):
         'from ctl nodes'.format(url)
 
 
+@pytest.mark.sl_dup
+#stacklight-pytest?
+@pytest.mark.full
 @pytest.mark.usefixtures('check_grafana')
 def test_internal_ui_grafana(local_salt_client, ctl_nodes_pillar):
     IP = local_salt_client.pillar_get(param='_param:stacklight_monitor_address')
@@ -142,6 +159,7 @@ def test_internal_ui_grafana(local_salt_client, ctl_nodes_pillar):
         'from ctl nodes'.format(url)
 
 
+@pytest.mark.smoke
 @pytest.mark.usefixtures('check_grafana')
 def test_public_ui_grafana(local_salt_client, ctl_nodes_pillar):
     IP = local_salt_client.pillar_get(param='_param:cluster_public_host')
@@ -156,6 +174,9 @@ def test_public_ui_grafana(local_salt_client, ctl_nodes_pillar):
         'Public Grafana page is not reachable on {} from ctl nodes'.format(url)
 
 
+@pytest.mark.sl_dup
+#stacklight-pytest?
+@pytest.mark.full
 @pytest.mark.usefixtures('check_alerta')
 def test_internal_ui_alerta(local_salt_client, ctl_nodes_pillar):
     IP = local_salt_client.pillar_get(param='_param:stacklight_monitor_address')
@@ -171,6 +192,7 @@ def test_internal_ui_alerta(local_salt_client, ctl_nodes_pillar):
         'Internal Alerta page is not reachable on {} from ctl nodes'.format(url)
 
 
+@pytest.mark.smoke
 @pytest.mark.usefixtures('check_alerta')
 def test_public_ui_alerta(local_salt_client, ctl_nodes_pillar):
     IP = local_salt_client.pillar_get(param='_param:cluster_public_host')
@@ -186,6 +208,7 @@ def test_public_ui_alerta(local_salt_client, ctl_nodes_pillar):
         'Public Alerta page is not reachable on {} from ctl nodes'.format(url)
 
 
+@pytest.mark.smoke
 @pytest.mark.usefixtures('check_openstack')
 @pytest.mark.usefixtures('check_drivetrain')
 def test_public_ui_jenkins(local_salt_client, ctl_nodes_pillar):
@@ -202,6 +225,7 @@ def test_public_ui_jenkins(local_salt_client, ctl_nodes_pillar):
         'Public Jenkins page is not reachable on {} from ctl nodes'.format(url)
 
 
+@pytest.mark.smoke
 @pytest.mark.usefixtures('check_openstack')
 @pytest.mark.usefixtures('check_drivetrain')
 def test_public_ui_gerrit(local_salt_client, ctl_nodes_pillar):

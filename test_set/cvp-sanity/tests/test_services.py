@@ -1,6 +1,5 @@
 import pytest
 import json
-import os
 import utils
 
 # Some nodes can have services that are not applicable for other nodes in similar group.
@@ -10,6 +9,7 @@ import utils
 inconsistency_rule = {"kvm03": ["srv-volumes-backup.mount", "rsync"]}
 
 
+@pytest.mark.full
 def test_check_services(local_salt_client, nodes_in_group):
     """
     Skips services if they are not consistent for all node.

@@ -48,6 +48,7 @@ def get_password(local_salt_client,service):
     return password
 
 
+@pytest.mark.full
 def test_drivetrain_gerrit(local_salt_client, check_cicd):
     gerrit_password = get_password(local_salt_client,'gerrit:client')
     gerrit_error = ''
@@ -106,6 +107,7 @@ def test_drivetrain_gerrit(local_salt_client, check_cicd):
         'Something is wrong with Gerrit'.format(gerrit_error)
 
 
+@pytest.mark.full
 def test_drivetrain_openldap(local_salt_client, check_cicd):
     """
          1. Create a test user 'DT_test_user' in openldap
@@ -207,6 +209,9 @@ def test_drivetrain_openldap(local_salt_client, check_cicd):
         '''Test user was not found'''
 
 
+@pytest.mark.sl_dup
+#DockerService***Outage
+@pytest.mark.full
 def test_drivetrain_services_replicas(local_salt_client, check_cicd):
     """
         # Execute ` salt -C 'I@gerrit:client' cmd.run 'docker service ls'` command to get info  for each docker service like that:
@@ -234,6 +239,7 @@ def test_drivetrain_services_replicas(local_salt_client, check_cicd):
     assert len(wrong_items) == 0
 
 
+@pytest.mark.full
 def test_drivetrain_components_and_versions(local_salt_client, check_cicd):
     """
         1. Execute command `docker service ls --format "{{.Image}}"'` on  the 'I@gerrit:client' target
@@ -272,6 +278,7 @@ def test_drivetrain_components_and_versions(local_salt_client, check_cicd):
               {}'''.format(json.dumps(mismatch, indent=4))
 
 
+@pytest.mark.full
 def test_jenkins_jobs_branch(local_salt_client, check_cicd):
     """ This test compares Jenkins jobs versions
         collected from the cloud vs collected from pillars.
@@ -319,6 +326,7 @@ def test_jenkins_jobs_branch(local_salt_client, check_cicd):
               {}'''.format(json.dumps(version_mismatch, indent=4))
 
 
+@pytest.mark.full
 def test_drivetrain_jenkins_job(local_salt_client, check_cicd):
     """
         # Login to Jenkins on jenkins:client
@@ -362,6 +370,8 @@ def test_drivetrain_jenkins_job(local_salt_client, check_cicd):
          '''.format(jenkins_test_job)
 
 
+@pytest.mark.smoke
+# ??
 def test_kdt_all_pods_are_available(local_salt_client, check_kdt):
     """
      # Run kubectl get pods -n drivetrain on kdt-nodes to get status for each pod
@@ -399,6 +409,8 @@ def test_kdt_all_pods_are_available(local_salt_client, check_kdt):
             report=report_with_errors
         )
 
+@pytest.mark.smoke
+# ??
 def test_kfg_all_pods_are_available(local_salt_client, check_kfg):
     """
      # Run kubectl get pods -n drivetrain on cfg node to get status for each pod
