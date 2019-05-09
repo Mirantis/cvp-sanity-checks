@@ -1,6 +1,8 @@
 import json
+import pytest
 
 
+@pytest.mark.full
 def test_check_default_gateways(local_salt_client, nodes_in_group):
     netstat_info = local_salt_client.cmd(
         tgt="L@"+','.join(nodes_in_group),

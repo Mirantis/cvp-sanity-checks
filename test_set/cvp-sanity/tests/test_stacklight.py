@@ -3,7 +3,9 @@ import requests
 import datetime
 import pytest
 
-
+@pytest.mark.sl_dup
+#ElasticsearchClusterHealthStatusMajor or stacklight-pytest
+@pytest.mark.full
 @pytest.mark.usefixtures('check_kibana')
 def test_elasticsearch_cluster(local_salt_client):
     salt_output = local_salt_client.pillar_get(
@@ -34,6 +36,9 @@ def test_elasticsearch_cluster(local_salt_client):
         json.dumps(resp, indent=4))
 
 
+@pytest.mark.sl_dup
+#stacklight-pytest
+@pytest.mark.full
 @pytest.mark.usefixtures('check_kibana')
 def test_kibana_status(local_salt_client):
     proxies = {"http": None, "https": None}
@@ -49,6 +54,8 @@ def test_kibana_status(local_salt_client):
             "Kibana statuses are unexpected: {}".format(i)
 
 
+@pytest.mark.smoke
+#TODO: recheck
 @pytest.mark.usefixtures('check_kibana')
 def test_elasticsearch_node_count(local_salt_client):
     now = datetime.datetime.now()
@@ -62,7 +69,7 @@ def test_elasticsearch_node_count(local_salt_client):
     proxies = {"http": None, "https": None}
     data = ('{"size": 0, "aggs": '
             '{"uniq_hostname": '
-            '{"terms": {"size": 1000, '
+            '{"terms": {"size": 500, '
             '"field": "Hostname.keyword"}}}}')
     response = requests.post(
         'http://{0}:9200/log-{1}/_search?pretty'.format(IP, today),
@@ -88,6 +95,9 @@ def test_elasticsearch_node_count(local_salt_client):
             format(len(monitored_nodes), len(all_nodes), missing_nodes)
 
 
+@pytest.mark.sl_dup
+#DockerServiceMonitoring*
+@pytest.mark.full
 def test_stacklight_services_replicas(local_salt_client):
     # TODO
     # change to docker:swarm:role:master ?
@@ -110,6 +120,7 @@ def test_stacklight_services_replicas(local_salt_client):
               {}'''.format(json.dumps(wrong_items, indent=4))
 
 
+@pytest.mark.smoke
 @pytest.mark.usefixtures('check_prometheus')
 def test_prometheus_alert_count(local_salt_client, ctl_nodes_pillar):
     IP = local_salt_client.pillar_get(param='_param:cluster_public_host')
@@ -128,6 +139,9 @@ def test_prometheus_alert_count(local_salt_client, ctl_nodes_pillar):
                          json.dumps(result), indent=4)
 
 
+@pytest.mark.sl_dup
+#DockerServiceMonitoring* ??
+@pytest.mark.full
 def test_stacklight_containers_status(local_salt_client):
     salt_output = local_salt_client.cmd(
         tgt='I@docker:swarm:role:master and I@prometheus:server',
@@ -159,6 +173,9 @@ def test_stacklight_containers_status(local_salt_client):
               {}'''.format(json.dumps(result, indent=4))
 
 
+@pytest.mark.sl_dup
+#PrometheusTargetDown
+@pytest.mark.full
 def test_running_telegraf_services(local_salt_client):
     salt_output = local_salt_client.cmd(tgt='telegraf:agent',
                                         fun='service.status',
@@ -176,6 +193,9 @@ def test_running_telegraf_services(local_salt_client):
                          'on following nodes: {}'.format(result)
 
 
+@pytest.mark.sl_dup
+#PrometheusTargetDown
+@pytest.mark.full
 def test_running_fluentd_services(local_salt_client):
     salt_output = local_salt_client.cmd(tgt='fluentd:agent',
                                         fun='service.status',

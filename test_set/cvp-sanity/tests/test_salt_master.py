@@ -1,6 +1,8 @@
 import json
+import pytest
 
 
+@pytest.mark.full
 def test_uncommited_changes(local_salt_client):
     git_status = local_salt_client.cmd(
         tgt='salt:master',
@@ -10,6 +12,7 @@ def test_uncommited_changes(local_salt_client):
            ' some unmerged changes {}'''.format(git_status.values()[0])
 
 
+@pytest.mark.smoke
 def test_reclass_smoke(local_salt_client):
     reclass = local_salt_client.cmd(
         tgt='salt:master',
@@ -21,6 +24,7 @@ def test_reclass_smoke(local_salt_client):
                           '\n {}'.format(reclass)
 
 
+@pytest.mark.smoke
 def test_reclass_nodes(local_salt_client):
     reclass = local_salt_client.cmd(
         tgt='salt:master',

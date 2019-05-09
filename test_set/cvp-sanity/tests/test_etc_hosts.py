@@ -1,6 +1,8 @@
 import json
+import pytest
 
 
+@pytest.mark.full
 def test_etc_hosts(local_salt_client):
     nodes_info = local_salt_client.cmd(
         tgt='*',

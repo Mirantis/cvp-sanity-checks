@@ -4,6 +4,7 @@ import utils
 import os
 
 
+@pytest.mark.full
 def test_mtu(local_salt_client, nodes_in_group):
     testname = os.path.basename(__file__).split('.')[0]
     config = utils.get_configuration()

@@ -1,6 +1,9 @@
 import pytest
 
 
+@pytest.mark.sl_dup
+#CinderServiceDown, CinderServicesDownMinor
+@pytest.mark.full
 def test_cinder_services_are_up(local_salt_client, check_cinder_backends):
     """
         # Make sure that cinder backend exists with next command: `salt -C "I@cinder:controller" pillar.get cinder:controller:backend`
@@ -12,7 +15,7 @@ def test_cinder_services_are_up(local_salt_client, check_cinder_backends):
     assert service_down == '', \
         '''Some cinder services are in wrong state'''
 
-
+@pytest.mark.full
 def test_cinder_services_has_all_backends(local_salt_client, check_cinder_backends):
     """
         # Make sure that cinder backend exists with next command: `salt -C "I@cinder:controller" pillar.get cinder:controller:backend`

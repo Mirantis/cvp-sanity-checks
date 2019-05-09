@@ -2,6 +2,8 @@ import json
 import pytest
 
 
+@pytest.mark.smoke
+#move to sl?
 def test_minions_status(local_salt_client):
     result = local_salt_client.cmd(
         tgt='salt:master',

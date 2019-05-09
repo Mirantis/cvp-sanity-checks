@@ -1,6 +1,11 @@
 import utils
+import pytest
 
 
+@pytest.mark.sl_dup
+#RabbitmqServiceDown, RabbitmqErrorLogsTooHigh
+#TODO: a better test
+@pytest.mark.full
 def test_checking_rabbitmq_cluster(local_salt_client):
     # disable config for this test
     # it may be reintroduced in future

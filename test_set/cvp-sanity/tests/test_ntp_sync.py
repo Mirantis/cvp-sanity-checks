@@ -2,7 +2,10 @@ import json
 import utils
 import pytest
 
+
 @pytest.mark.xfail
+@pytest.mark.smoke
+#move to sl?
 def test_ntp_sync(local_salt_client):
     """Test checks that system time is the same across all nodes"""
 
@@ -26,6 +29,7 @@ def test_ntp_sync(local_salt_client):
                              json.dumps(result, indent=4))
 
 
+@pytest.mark.smoke
 def test_ntp_peers_state(local_salt_client):
     """Test gets ntpq peers state and checks the system peer is declared"""
     state = local_salt_client.cmd(
