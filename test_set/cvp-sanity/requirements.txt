@@ -1,5 +1,5 @@
 pytest==3.0.6
-requests==2.10.0
+requests>=2.20.0
 flake8
 PyYAML
 python-jenkins==0.4.11
