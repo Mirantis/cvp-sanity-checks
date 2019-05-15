@@ -1,0 +1,102 @@
+---
+# MANDATORY: Credentials for Salt Master
+# SALT_URL should consist of url and port.
+# For example: http://10.0.0.1:6969
+# 6969 - default Salt Master port to listen
+# Can be found on cfg* node using
+# "salt-call pillar.get _param:salt_master_host"
+# and "salt-call pillar.get _param:salt_master_port"
+# or "salt-call pillar.get _param:jenkins_salt_api_url"
+# SALT_USERNAME by default: salt
+# It can be verified with "salt-call shadow.info salt"
+# SALT_PASSWORD you can find on cfg* node using
+# "salt-call pillar.get _param:salt_api_password"
+# or "grep -r salt_api_password /srv/salt/reclass/classes"
+SALT_URL: <salt_url>
+SALT_USERNAME: <salt_usr>
+SALT_PASSWORD: <salt_pwd>
+
+# How many seconds to wait for salt-minion to respond
+salt_timeout: 1
+
+# List of nodes (full fqdn) to skip in ALL tests
+# Use as env variable as
+# export skipped_nodes=mtr01.local,log02.local
+# TEMPORARY: please do not comment this setting.
+skipped_nodes: [""]
+
+# List of groups (short name, e.g. dbs) to skip in group tests
+# Use as env variable as
+# export skipped_groups=mtr,log
+# TEMPORARY: please do not comment this setting.
+skipped_groups: [""]
+
+# Groups can be defined using pillars.
+# Uncomment this section to enable this.
+# Otherwise groups will be discovered automaticaly
+# Tips:
+# 1) you don't need to separate kvm and kvm_glusterfs nodes
+# 2) Use I@pillar or mask like ctl* for targetting nodes
+
+groups: {
+         cmp: 'I@nova:compute',
+         ctl: 'I@keystone:server',
+         msg: 'I@rabbitmq:server',
+         dbs: 'I@galera:*',
+         prx: 'I@nginx:server',
+         mon: 'I@prometheus:server and not I@influxdb:server',
+         log: 'I@kibana:server',
+         mtr: 'I@influxdb:server',
+         kvm: 'I@salt:control',
+         cid: 'I@docker:host and not I@prometheus:server and not I@kubernetes:*',
+         ntw: 'I@opencontrail:database',
+         ceph_mon: 'I@ceph:mon',
+         ceph_osd: 'I@ceph:osd',
+         k8-ctl: 'I@etcd:server',
+         k8-cmp: 'I@kubernetes:* and not I@etcd:*',
+         cfg: 'I@salt:master',
+         gtw: 'I@neutron:gateway'
+}
+
+# mtu test setting
+# this test may skip groups (see example)
+test_mtu:
+  { #"skipped_groups": ["dbs"]
+    "skipped_ifaces": ["bonding_masters", "lo", "veth", "tap", "cali", "qv", "qb", "br-int", "vxlan"]}
+# mask for interfaces to skip
+
+# test duplicate ips
+# do not comment this section
+test_duplicate_ips:
+  {
+    "skipped_ifaces": ["lo", "virbr0", "docker_gwbridge", "docker0"]}
+
+# packages test 'test_packages_are_latest' setting
+# this can skip scecial packages
+# True value for 'skip_test' will skip this test. Set False to run the test.
+# TODO: remove default False value when prod env is fixed
+test_packages:
+  { # "skipped_packages": ["update-notifier-common", "wget"]
+    "skipped_packages": [""],
+    "skip_test": True
+  }
+
+# specify what mcp version (tag) is deployed
+drivetrain_version: ''
+
+# jenkins job to run during the test
+jenkins_test_job: 'DT-test-job'
+jenkins_cvp_job: 'cvp-sanity'
+
+# ntp test setting
+# this test may skip specific node (use fqdn)
+ntp_skipped_nodes: [""]
+
+# packages need to skip in
+# test_check_package_versions
+skipped_packages: [""]
+# test_check_module_versions
+skipped_modules: [""]
+# test_check_services
+skipped_services: [""]
+

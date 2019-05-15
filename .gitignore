@@ -29,6 +29,7 @@ dist/
 issue/
 env/
 .env/
+venv/
 3rdparty/
 .tox
 .cache
@@ -37,4 +38,3 @@ env/
 .ropeproject
 .idea
 .hypothesis
-

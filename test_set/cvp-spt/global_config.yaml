@@ -1,0 +1,31 @@
+---
+# MANDATORY: Credentials for Salt Master
+# SALT_URL should consist of url and port.
+# For example: http://10.0.0.1:6969
+# 6969 - default Salt Master port to listen
+# Can be found on cfg* node using
+# "salt-call pillar.get _param:salt_master_host"
+# and "salt-call pillar.get _param:salt_master_port"
+# or "salt-call pillar.get _param:jenkins_salt_api_url"
+# SALT_USERNAME by default: salt
+# It can be verified with "salt-call shadow.info salt"
+# SALT_PASSWORD you can find on cfg* node using
+# "salt-call pillar.get _param:salt_api_password"
+# or "grep -r salt_api_password /srv/salt/reclass/classes"
+SALT_URL: <URL>
+SALT_USERNAME: <USERNAME>
+SALT_PASSWORD: <PASSWORD>
+
+# How many seconds to wait for salt-minion to respond
+salt_timeout: 1
+
+image_name: "Ubuntu"
+skipped_nodes: []
+# example for Jenkins: networks=net1,net2
+networks: "10.101.0.0/24"
+external_network: ''
+HW_NODES: []
+CMP_HOSTS: []
+nova_timeout: 30
+iperf_prep_string: "sudo /bin/bash -c 'echo \"91.189.88.161        archive.ubuntu.com\" >> /etc/hosts'"
+IMAGE_SIZE_MB: 2000
