@@ -32,8 +32,12 @@ def test_mounted_file_systems(local_salt_client, nodes_in_group):
     for node in mounts_by_nodes:
         if node in exclude_nodes:
             continue
-        result[node] = "\n".join(sorted(mounts_by_nodes[node].split()))
-        pretty_result[node] = sorted(mounts_by_nodes[node].split())
+        if isinstance(mounts_by_nodes[node], bool):
+            result[node] = 'Cannot access this node'
+            pretty_result[node] = 'Cannot access this node'
+        else:
+            result[node] = "\n".join(sorted(mounts_by_nodes[node].split()))
+            pretty_result[node] = sorted(mounts_by_nodes[node].split())
 
     if not result:
         pytest.skip("These nodes are skipped")
