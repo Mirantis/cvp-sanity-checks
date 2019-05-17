@@ -1,5 +1,6 @@
 import pytest
 import logging
+import json
 
 
 @pytest.mark.full
@@ -45,7 +46,6 @@ def test_list_of_repo_on_nodes(local_salt_client, nodes_in_group):
     fail_counter = 0
     my_set.update(actual_repo_list)
     my_set.update(expected_salt_data)
-    import json
     for repo in my_set:
         rows = []
         if repo not in actual_repo_list:

@@ -90,7 +90,7 @@ def test_check_module_versions(local_salt_client, nodes_in_group):
     if len(total_nodes) < 2:
         pytest.skip("Nothing to compare - only 1 node")
     list_of_pip_packages = local_salt_client.cmd(tgt="L@"+','.join(nodes_in_group),
-                                   param='pip.freeze', expr_form='compound')
+                                   fun='pip.freeze', expr_form='compound')
 
     nodes = []
 

@@ -316,7 +316,7 @@ def test_jenkins_jobs_branch(local_salt_client, check_cicd):
             continue
 
         actual_version = BranchSpec[0].getElementsByTagName('name')[0].childNodes[0].data
-        if actual_version not in expected_version and expected_version != '':
+        if expected_version and actual_version not in expected_version:
             version_mismatch.append("Job {0} has {1} branch."
                                     "Expected {2}".format(job_name,
                                                           actual_version,
