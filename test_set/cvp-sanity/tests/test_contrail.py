@@ -1,6 +1,6 @@
 import pytest
 import json
-import utils
+
 
 pytestmark = pytest.mark.usefixtures("contrail")
 
