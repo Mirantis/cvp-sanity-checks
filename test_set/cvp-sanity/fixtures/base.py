@@ -193,7 +193,8 @@ def print_node_version(local_salt_client):
             report_text += template.format(node, *[item.split("=")[1] for item in data])
 
         def write_report():
-            logging.info(report_text)
+            # DO NOT change to logging
+            print(report_text)
         atexit.register(write_report)
         yield
     except Exception as e:
