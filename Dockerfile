@@ -11,7 +11,7 @@ SHELL ["/bin/bash", "-o", "pipefail", "-c"]
 USER root
 ARG UBUNTU_MIRROR_URL="http://archive.ubuntu.com/ubuntu"
 ARG SL_TEST_REPO='http://gerrit.mcp.mirantis.com/mcp/stacklight-pytest'
-ARG SL_TEST_BRANCH='master'
+ARG SL_TEST_BRANCH='release/2019.2.0'
 
 WORKDIR /var/lib/
 COPY bin/ /usr/local/bin/
