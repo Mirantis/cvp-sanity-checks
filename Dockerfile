@@ -5,7 +5,8 @@ LABEL maintainer="dev@mirantis.com"
 ENV DEBIAN_FRONTEND=noninteractive \
     DEBCONF_NONINTERACTIVE_SEEN=true \
     LANG=C.UTF-8 \
-    LANGUAGE=$LANG
+    LANGUAGE=$LANG \
+    PYTEST_REPORT_DIR=/var/lib/validation_artifacts
 SHELL ["/bin/bash", "-o", "pipefail", "-c"]
 
 USER root
