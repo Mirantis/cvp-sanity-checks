@@ -26,7 +26,6 @@ def test_reclass_smoke(local_salt_client):
 
 
 @pytest.mark.smoke
-@pytest.mark.xfail
 def test_reclass_nodes(local_salt_client):
     reclass = local_salt_client.cmd(
         tgt='salt:master',
