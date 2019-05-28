@@ -145,6 +145,7 @@ def test_check_k8s_image_availability(local_salt_client):
         logging.error('{} IS NOT AVAILABLE'.format(hostname))
 
 
+@pytest.mark.xfail
 def test_k8s_dashboard_available(local_salt_client):
     """
         # Check is kubernetes enabled on the cluster with command  `salt -C 'etcd:server' cmd.run 'kubectl get svc -n kube-system'`
@@ -172,6 +173,7 @@ def test_k8s_dashboard_available(local_salt_client):
         tgt='etcd:server',
         param='kubernetes:common:addons:dashboard:public_ip')
 
+    assert external_ip, "Kubernetes dashboard public ip is not found in pillars"
     assert external_ip.__len__() > 0, "Kubernetes dashboard is enabled but not defined in pillars"
     # dashboard port 8443 is hardcoded in kubernetes formula
     url = "https://{}:8443".format(external_ip)
