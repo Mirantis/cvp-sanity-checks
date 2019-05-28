@@ -10,23 +10,31 @@ def test_mtu(local_salt_client, nodes_in_group):
     testname = os.path.basename(__file__).split('.')[0]
     config = utils.get_configuration()
     skipped_ifaces = config.get(testname)["skipped_ifaces"] or \
-        ["bonding_masters", "lo", "veth", "tap", "cali", "qv", "qb", "br-int", "vxlan"]
+        ["bonding_masters", "lo", "veth", "tap", "cali", "qv", "qb", "br-int",
+         "vxlan", "virbr0", "virbr0-nic", "docker0", "o-hm0"]
     total = {}
     network_info = local_salt_client.cmd(
         tgt="L@"+','.join(nodes_in_group),
         param='ls /sys/class/net/',
         expr_form='compound')
 
-    kvm_nodes = local_salt_client.test_ping(tgt='salt:control').keys()
-
     if len(network_info.keys()) < 2:
         pytest.skip("Nothing to compare - only 1 node")
+
+    # collect all nodes and check if virsh is installed there
+    kvm_nodes = local_salt_client.cmd(
+        tgt='salt:control',
+        fun='pkg.version',
+        param='libvirt-clients',
+        expr_form='pillar'
+    )
 
     for node, ifaces_info in network_info.iteritems():
         if isinstance(ifaces_info, bool):
             logging.info("{} node is skipped".format(node))
             continue
-        if node in kvm_nodes:
+        # if node is a kvm node and virsh is installed there
+        if node in kvm_nodes.keys() and kvm_nodes[node]:
             kvm_info = local_salt_client.cmd(tgt=node,
                                              param="virsh list | "
                                                    "awk '{print $2}' | "
@@ -62,9 +70,7 @@ def test_mtu(local_salt_client, nodes_in_group):
                 diff.append(total[node][interf])
                 row.append("{}: {}".format(node, total[node][interf]))
             else:
-                # skip node with no virbr0 or virbr0-nic interfaces
-                if interf not in ['virbr0', 'virbr0-nic']:
-                    row.append("{}: No interface".format(node))
+                row.append("{}: No interface".format(node))
         if diff.count(diff[0]) < len(nodes):
             row.sort()
             row.insert(0, interf)
