@@ -62,7 +62,8 @@ groups: {
 # this test may skip groups (see example)
 test_mtu:
   { #"skipped_groups": ["dbs"]
-    "skipped_ifaces": ["bonding_masters", "lo", "veth", "tap", "cali", "qv", "qb", "br-int", "vxlan"]}
+    "skipped_ifaces": ["bonding_masters", "lo", "veth", "tap", "cali", "qv", "qb", "br-int",
+                       "vxlan", "virbr0", "virbr0-nic", "docker0", "o-hm0"]}
 # mask for interfaces to skip
 
 # test duplicate ips
