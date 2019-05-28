@@ -9,8 +9,10 @@ def test_mounted_file_systems(local_salt_client, nodes_in_group):
         # Get all mount points from each node in the group  with the next command: `df -h | awk '{print $1}'`
         # Check that all mount points are similar for each node in the group
     """
+    exclude_mounts = 'grep -v "overlay\|tmpfs\|shm\|Filesystem"'
     mounts_by_nodes = local_salt_client.cmd(tgt="L@"+','.join(nodes_in_group),
-                                            param="df -h | awk '{print $1}'",
+                                            param="df -h | awk '{print $1}'" +
+                                                  " |" + exclude_mounts,
                                             expr_form='compound')
 
     # Let's exclude cmp, kvm, ceph OSD nodes, mon, cid, k8s-ctl, k8s-cmp nodes
