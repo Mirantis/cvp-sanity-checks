@@ -79,7 +79,7 @@ class salt_remote:
                 continue
             response = request.json()['return'][0]
             result = {key: response[key] for key in response if key not in self.skipped_nodes}
-            if check_status and False in result.values():
+            if check_status and (False in result.values() or not result):
                 logging.warning("One or several nodes are not responding. Output {}".format(json.dumps(result, indent=4)))
                 continue
             break
