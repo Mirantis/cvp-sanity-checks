@@ -19,7 +19,7 @@ def test_single_vip_exists(local_salt_client):
                         else ""
     no_vip = {}
     for group in groups:
-        if group in ['cmp', 'cfg', 'kvm', 'cmn', 'osd', 'gtw']:
+        if group in ['cmp', 'cfg', 'kvm', 'cmn', 'osd', 'gtw', 'dns']:
             continue
         nodes_list = local_salt_client.cmd(
             tgt="L@" + ','.join(groups[group]),
