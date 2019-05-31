@@ -51,10 +51,12 @@ RUN set -ex; pushd /etc/apt/ && echo > sources.list && \
           && virtualenv --system-site-packages venv \
           && . venv/bin/activate \
           && git clone -b $SL_TEST_BRANCH $SL_TEST_REPO  \
-          && pip install ./stacklight-pytest \
-          && pip install -r stacklight-pytest/requirements.txt  \
+          && pushd stacklight-pytest \
+          && git log -n1 \
+          && pip install . \
+          && pip install -r requirements.txt  \
           && deactivate \
-          && popd  \
+          && popd && popd  \
 # Cleanup
     && apt-get -y purge libx11-data xauth libxmuu1 libxcb1 libx11-6 libxext6 ppp pppconfig pppoeconf popularity-contest cpp gcc g++ libssl-doc && \
     apt-get -y autoremove; apt-get -y clean ; rm -rf /root/.cache; rm -rf /var/lib/apt/lists/* && \
