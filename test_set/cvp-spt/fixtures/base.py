@@ -29,21 +29,22 @@ def hw_pair(request):
 def openstack_clients(local_salt_client):
     nodes_info = local_salt_client.cmd(
         'keystone:server', 'pillar.get',
-        ['keystone:server'],
+        ['keystone:client:os_client_config:cfgs:root:content:clouds:admin_identity'],
         expr_form='pillar')
+
     if nodes_info.__len__() < 1:
         pytest.skip("No keystone server found")
         return False
     keystone = nodes_info[nodes_info.keys()[0]]
-    url = 'http://{ip}:{port}/'.format(ip=keystone['bind']['public_address'],
-                                       port=keystone['bind']['public_port'])
+    # TODO: region? OS_CACERT?
     return os_client.OfficialClientManager(
-        username=keystone['admin_name'],
-        password=keystone['admin_password'],
-        tenant_name=keystone['admin_tenant'],
-        auth_url=url,
+        username=keystone['auth']['username'],
+        password=keystone['auth']['password'],
+        tenant_name=keystone['auth']['project_name'],
+        auth_url=keystone['auth']['auth_url'],
         cert=False,
-        domain='Default',
+        # domain will be used as project_domain_name and user_domain_name
+        domain=keystone['auth']['project_domain_name'],
         )
 
 
