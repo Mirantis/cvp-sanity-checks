@@ -24,6 +24,22 @@ def test_check_services(local_salt_client, nodes_in_group):
     if len(services_by_nodes.keys()) < 2:
         pytest.skip("Nothing to compare - only 1 node")
 
+    # PROD-30833
+    gtw01 = local_salt_client.pillar_get(
+        param='_param:openstack_gateway_node01_hostname') or 'gtw01'
+    cluster_domain = local_salt_client.pillar_get(
+        param='_param:cluster_domain') or '.local'
+    gtw01 += '.' + cluster_domain
+    if gtw01 in nodes_in_group:
+        octavia = local_salt_client.cmd(tgt="L@" + ','.join(nodes_in_group),
+                                        fun='pillar.get',
+                                        param='octavia:manager:enabled',
+                                        expr_form='compound')
+        gtws = [gtw for gtw in octavia.values() if gtw]
+        if len(gtws) == 1 and gtw01 in services_by_nodes.keys():
+            services_by_nodes.pop(gtw01)
+            logging.info("gtw01 node is skipped in test_check_services")
+
     nodes = []
     pkts_data = []
     all_services = set()

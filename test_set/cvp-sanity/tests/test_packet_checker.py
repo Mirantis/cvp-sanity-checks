@@ -13,6 +13,23 @@ def test_check_package_versions(local_salt_client, nodes_in_group):
     # Let's exclude cid01 and dbs01 nodes from this check
     exclude_nodes = local_salt_client.test_ping(tgt="I@galera:master or I@gerrit:client",
                                                 expr_form='compound').keys()
+
+    # PROD-30833
+    gtw01 = local_salt_client.pillar_get(
+        param='_param:openstack_gateway_node01_hostname') or 'gtw01'
+    cluster_domain = local_salt_client.pillar_get(
+        param='_param:cluster_domain') or '.local'
+    gtw01 += '.' + cluster_domain
+    if gtw01 in nodes_in_group:
+        octavia = local_salt_client.cmd(tgt="L@" + ','.join(nodes_in_group),
+                                        fun='pillar.get',
+                                        param='octavia:manager:enabled',
+                                        expr_form='compound')
+        gtws = [gtw for gtw in octavia.values() if gtw]
+        if len(gtws) == 1:
+            exclude_nodes.append(gtw01)
+            logging.info("gtw01 node is skipped in test_check_package_versions")
+
     total_nodes = [i for i in packages_versions.keys() if i not in exclude_nodes]
     if len(total_nodes) < 2:
         pytest.skip("Nothing to compare - only 1 node")
@@ -85,6 +102,23 @@ def test_check_module_versions(local_salt_client, nodes_in_group):
 
     exclude_nodes = local_salt_client.test_ping(tgt="I@galera:master or I@gerrit:client",
                                                 expr_form='compound').keys()
+
+    # PROD-30833
+    gtw01 = local_salt_client.pillar_get(
+        param='_param:openstack_gateway_node01_hostname') or 'gtw01'
+    cluster_domain = local_salt_client.pillar_get(
+        param='_param:cluster_domain') or '.local'
+    gtw01 += '.' + cluster_domain
+    if gtw01 in nodes_in_group:
+        octavia = local_salt_client.cmd(tgt="L@" + ','.join(nodes_in_group),
+                                        fun='pillar.get',
+                                        param='octavia:manager:enabled',
+                                        expr_form='compound')
+        gtws = [gtw for gtw in octavia.values() if gtw]
+        if len(gtws) == 1:
+            exclude_nodes.append(gtw01)
+            logging.info("gtw01 node is skipped in test_check_module_versions")
+
     total_nodes = [i for i in pre_check.keys() if i not in exclude_nodes]
 
     if len(total_nodes) < 2:
@@ -120,3 +154,4 @@ def test_check_module_versions(local_salt_client, nodes_in_group):
     assert len(pkts_data) <= 1, \
         "Several problems found: {0}".format(
         json.dumps(pkts_data, indent=4))
+
