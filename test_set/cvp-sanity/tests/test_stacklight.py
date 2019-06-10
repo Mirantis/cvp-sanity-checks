@@ -11,13 +11,17 @@ def test_elasticsearch_cluster(local_salt_client):
     salt_output = local_salt_client.pillar_get(
         tgt='kibana:server',
         param='_param:haproxy_elasticsearch_bind_host')
+    ssl = local_salt_client.pillar_get(
+        tgt='elasticsearch:server',
+        param='haproxy:proxy:listen:elasticsearch:binds:ssl:enabled')
+    proto = "https" if ssl == "True" else "http"
 
     proxies = {"http": None, "https": None}
     IP = salt_output
-    assert requests.get('http://{}:9200/'.format(IP),
+    assert requests.get('{0}://{1}:9200/'.format(proto, IP),
                         proxies=proxies).status_code == 200, \
         'Cannot check elasticsearch url on {}.'.format(IP)
-    resp = requests.get('http://{}:9200/_cat/health'.format(IP),
+    resp = requests.get('{0}://{1}:9200/_cat/health'.format(proto, IP),
                         proxies=proxies).content
     assert resp.split()[3] == 'green', \
         'elasticsearch status is not good {}'.format(
@@ -43,7 +47,12 @@ def test_elasticsearch_cluster(local_salt_client):
 def test_kibana_status(local_salt_client):
     proxies = {"http": None, "https": None}
     IP = local_salt_client.pillar_get(param='_param:stacklight_log_address')
-    resp = requests.get('http://{}:5601/api/status'.format(IP),
+    ssl = local_salt_client.pillar_get(
+        tgt='kibana:server',
+        param='haproxy:proxy:listen:kibana:binds:ssl:enabled')
+    proto = "https" if ssl == "True" else "http"
+
+    resp = requests.get('{0}://{1}:5601/api/status'.format(proto, IP),
                         proxies=proxies).content
     body = json.loads(resp)
     assert body['status']['overall']['state'] == "green", \
@@ -65,6 +74,11 @@ def test_elasticsearch_node_count(local_salt_client):
         param='_param:haproxy_elasticsearch_bind_host')
 
     IP = salt_output
+    ssl = local_salt_client.pillar_get(
+        tgt='elasticsearch:server',
+        param='haproxy:proxy:listen:elasticsearch:binds:ssl:enabled')
+    proto = "https" if ssl == "True" else "http"
+
     headers = {'Content-type': 'application/json', 'Accept': 'text/plain'}
     proxies = {"http": None, "https": None}
     data = ('{"size": 0, "aggs": '
@@ -72,7 +86,7 @@ def test_elasticsearch_node_count(local_salt_client):
             '{"terms": {"size": 500, '
             '"field": "Hostname.keyword"}}}}')
     response = requests.post(
-        'http://{0}:9200/log-{1}/_search?pretty'.format(IP, today),
+        '{0}://{1}:9200/log-{2}/_search?pretty'.format(proto, IP, today),
         proxies=proxies,
         headers=headers,
         data=data)
@@ -124,13 +138,15 @@ def test_stacklight_services_replicas(local_salt_client):
 @pytest.mark.usefixtures('check_prometheus')
 def test_prometheus_alert_count(local_salt_client, ctl_nodes_pillar):
     IP = local_salt_client.pillar_get(param='_param:cluster_public_host')
+    proto = local_salt_client.pillar_get(
+        param='_param:cluster_public_protocol')
     # keystone:server can return 3 nodes instead of 1
     # this will be fixed later
     # TODO
     nodes_info = local_salt_client.cmd(
         tgt=ctl_nodes_pillar,
-        param='curl -s http://{}:15010/alerts | grep icon-chevron-down | '
-              'grep -v "0 active"'.format(IP),
+        param='curl -s {0}://{1}:15010/alerts | grep icon-chevron-down | '
+              'grep -v "0 active"'.format(proto, IP),
         expr_form='pillar')
 
     result = nodes_info[nodes_info.keys()[0]].replace('</td>', '').replace(
