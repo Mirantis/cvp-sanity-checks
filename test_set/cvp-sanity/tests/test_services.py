@@ -31,11 +31,12 @@ def test_check_services(local_salt_client, nodes_in_group):
         param='_param:cluster_domain') or '.local'
     gtw01 += '.' + cluster_domain
     if gtw01 in nodes_in_group:
-        os_octavia = local_salt_client.pillar_get(
-            param='_param:openstack_octavia_enabled')
-        octavia_man_cl = local_salt_client.pillar_get(
-            param='_param:octavia_manager_cluster')
-        if os_octavia and not octavia_man_cl and gtw01 in services_by_nodes.keys():
+        octavia = local_salt_client.cmd(tgt="L@" + ','.join(nodes_in_group),
+                                        fun='pillar.get',
+                                        param='octavia:manager:enabled',
+                                        expr_form='compound')
+        gtws = [gtw for gtw in octavia.values() if gtw]
+        if len(gtws) == 1 and gtw01 in services_by_nodes.keys():
             services_by_nodes.pop(gtw01)
             logging.info("gtw01 node is skipped in test_check_services")
 
