@@ -248,15 +248,12 @@ def test_drivetrain_components_and_versions(local_salt_client, check_cicd):
         4. Check that all docker services has label that equals to mcp_version
 
     """
-    config = utils.get_configuration()
-    if not config['drivetrain_version']:
-        expected_version = \
-            local_salt_client.pillar_get(param='_param:mcp_version') or \
-            local_salt_client.pillar_get(param='_param:apt_mk_version')
-        if not expected_version:
-            pytest.skip("drivetrain_version is not defined. Skipping")
-    else:
-        expected_version = config['drivetrain_version']
+    def get_name(long_name):
+        return long_name.rsplit(':', 1)[0]
+
+    def get_tag(long_name):
+        return long_name.rsplit(':', 1)[-1]
+
     table_with_docker_services = local_salt_client.cmd(tgt='I@gerrit:client',
                                                        param='docker service ls --format "{{.Image}}"',
                                                        expr_form='compound')
@@ -265,14 +262,14 @@ def test_drivetrain_components_and_versions(local_salt_client, check_cicd):
     mismatch = {}
     actual_images = {}
     for image in set(table_with_docker_services[table_with_docker_services.keys()[0]].split('\n')):
-        actual_images[image.split(":")[0]] = image.split(":")[-1]
+        actual_images[get_name(image)] = get_tag(image)
     for image in set(expected_images):
-        im_name = image.split(":")[0]
+        im_name = get_name(image)
         if im_name not in actual_images:
             mismatch[im_name] = 'not found on env'
-        elif image.split(":")[-1] != actual_images[im_name]:
+        elif get_tag(image) != actual_images[im_name]:
             mismatch[im_name] = 'has {actual} version instead of {expected}'.format(
-                actual=actual_images[im_name], expected=image.split(":")[-1])
+                actual=actual_images[im_name], expected=get_tag(image))
     assert len(mismatch) == 0, \
         '''Some DriveTrain components do not have expected versions:
               {}'''.format(json.dumps(mismatch, indent=4))
