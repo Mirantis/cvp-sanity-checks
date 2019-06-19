@@ -13,7 +13,7 @@ def test_ui_horizon(local_salt_client, ctl_nodes_pillar):
         pytest.skip("Horizon is not enabled on this environment")
     result = local_salt_client.cmd_any(
         tgt=ctl_nodes_pillar,
-        param='curl --insecure {0}://{1}/auth/login/ 2>&1 | \
+        param='curl -k {0}://{1}/auth/login/ 2>&1 | \
                grep Login'.format(proto, IP),
         expr_form='pillar')
     assert len(result) != 0, \
@@ -52,7 +52,7 @@ def test_internal_ui_kibana(local_salt_client, ctl_nodes_pillar):
     url = "{}://{}:{}".format(proto, IP, port)
     result = local_salt_client.cmd(
         tgt=ctl_nodes_pillar,
-        param='curl {}/app/kibana 2>&1 | \
+        param='curl -k {}/app/kibana 2>&1 | \
                grep loading'.format(url),
         expr_form='pillar')
     assert len(result[result.keys()[0]]) != 0, \
@@ -70,7 +70,7 @@ def test_public_ui_kibana(local_salt_client, ctl_nodes_pillar):
     url = "{}://{}:{}".format(proto, IP, port)
     result = local_salt_client.cmd(
         tgt=ctl_nodes_pillar,
-        param='curl {}/app/kibana 2>&1 | \
+        param='curl -k {}/app/kibana 2>&1 | \
                grep loading'.format(url),
         expr_form='pillar')
     assert len(result[result.keys()[0]]) != 0, \
@@ -107,7 +107,7 @@ def test_public_ui_prometheus(local_salt_client, ctl_nodes_pillar):
     url = "{}://{}:{}".format(proto, IP, port)
     result = local_salt_client.cmd(
         tgt=ctl_nodes_pillar,
-        param='curl {}/graph 2>&1 | \
+        param='curl -k {}/graph 2>&1 | \
                grep Prometheus'.format(url),
         expr_form='pillar')
     assert len(result[result.keys()[0]]) != 0, \
@@ -143,7 +143,7 @@ def test_public_ui_alert_manager(local_salt_client, ctl_nodes_pillar):
     url = "{}://{}:{}".format(proto, IP, port)
     result = local_salt_client.cmd(
         tgt=ctl_nodes_pillar,
-        param='curl -s {}/ | grep Alertmanager'.format(url),
+        param='curl -k -s {}/ | grep Alertmanager'.format(url),
         expr_form='pillar')
     assert len(result[result.keys()[0]]) != 0, \
         'Public AlertManager page is not reachable on {} ' \
@@ -178,7 +178,7 @@ def test_public_ui_grafana(local_salt_client, ctl_nodes_pillar):
     url = "{}://{}:{}".format(proto, IP, port)
     result = local_salt_client.cmd(
         tgt=ctl_nodes_pillar,
-        param='curl {}/login 2>&1 | grep Grafana'.format(url),
+        param='curl -k {}/login 2>&1 | grep Grafana'.format(url),
         expr_form='pillar')
     assert len(result[result.keys()[0]]) != 0, \
         'Public Grafana page is not reachable on {} from ctl nodes'.format(url)
@@ -212,7 +212,7 @@ def test_public_ui_alerta(local_salt_client, ctl_nodes_pillar):
     url = "{}://{}:{}".format(proto, IP, port)
     result = local_salt_client.cmd(
         tgt=ctl_nodes_pillar,
-        param='curl {}/ 2>&1 | \
+        param='curl -k {}/ 2>&1 | \
                grep Alerta'.format(url),
         expr_form='pillar')
     assert len(result[result.keys()[0]]) != 0, \

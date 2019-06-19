@@ -14,15 +14,15 @@ def test_elasticsearch_cluster(local_salt_client):
     ssl = local_salt_client.pillar_get(
         tgt='elasticsearch:server',
         param='haproxy:proxy:listen:elasticsearch:binds:ssl:enabled')
-    proto = "https" if ssl == "True" else "http"
+    proto = "https" if ssl else "http"
 
     proxies = {"http": None, "https": None}
     IP = salt_output
     assert requests.get('{0}://{1}:9200/'.format(proto, IP),
-                        proxies=proxies).status_code == 200, \
+                        proxies=proxies, verify=False).status_code == 200, \
         'Cannot check elasticsearch url on {}.'.format(IP)
     resp = requests.get('{0}://{1}:9200/_cat/health'.format(proto, IP),
-                        proxies=proxies).content
+                        proxies=proxies, verify=False).content
     assert resp.split()[3] == 'green', \
         'elasticsearch status is not good {}'.format(
         json.dumps(resp, indent=4))
@@ -50,10 +50,10 @@ def test_kibana_status(local_salt_client):
     ssl = local_salt_client.pillar_get(
         tgt='kibana:server',
         param='haproxy:proxy:listen:kibana:binds:ssl:enabled')
-    proto = "https" if ssl == "True" else "http"
+    proto = "https" if ssl else "http"
 
     resp = requests.get('{0}://{1}:5601/api/status'.format(proto, IP),
-                        proxies=proxies).content
+                        proxies=proxies, verify=False).content
     body = json.loads(resp)
     assert body['status']['overall']['state'] == "green", \
         "Kibana status is not expected: {}".format(
@@ -77,7 +77,7 @@ def test_elasticsearch_node_count(local_salt_client):
     ssl = local_salt_client.pillar_get(
         tgt='elasticsearch:server',
         param='haproxy:proxy:listen:elasticsearch:binds:ssl:enabled')
-    proto = "https" if ssl == "True" else "http"
+    proto = "https" if ssl else "http"
 
     headers = {'Content-type': 'application/json', 'Accept': 'text/plain'}
     proxies = {"http": None, "https": None}
@@ -89,6 +89,7 @@ def test_elasticsearch_node_count(local_salt_client):
         '{0}://{1}:9200/log-{2}/_search?pretty'.format(proto, IP, today),
         proxies=proxies,
         headers=headers,
+        verify = False,
         data=data)
     assert 200 == response.status_code, 'Unexpected code {}'.format(
         response.text)
@@ -145,7 +146,7 @@ def test_prometheus_alert_count(local_salt_client, ctl_nodes_pillar):
     # TODO
     nodes_info = local_salt_client.cmd(
         tgt=ctl_nodes_pillar,
-        param='curl -s {0}://{1}:15010/alerts | grep icon-chevron-down | '
+        param='curl -k -s {0}://{1}:15010/alerts | grep icon-chevron-down | '
               'grep -v "0 active"'.format(proto, IP),
         expr_form='pillar')
 
