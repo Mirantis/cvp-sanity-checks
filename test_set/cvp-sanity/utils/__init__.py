@@ -189,6 +189,7 @@ def calculate_groups():
 def get_configuration():
     """function returns configuration for environment
     and for test if it's specified"""
+
     global_config_file = os.path.join(
         os.path.dirname(os.path.abspath(__file__)), "../global_config.yaml")
     with open(global_config_file, 'r') as file:

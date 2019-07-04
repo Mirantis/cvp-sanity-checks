@@ -13,6 +13,7 @@ USER root
 ARG UBUNTU_MIRROR_URL="http://archive.ubuntu.com/ubuntu"
 ARG SL_TEST_REPO='http://gerrit.mcp.mirantis.com/mcp/stacklight-pytest'
 ARG SL_TEST_BRANCH='master'
+ENV PYTHONHTTPSVERIFY=0
 
 WORKDIR /var/lib/
 COPY bin/ /usr/local/bin/
