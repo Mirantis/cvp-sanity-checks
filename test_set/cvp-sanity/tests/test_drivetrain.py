@@ -12,31 +12,53 @@ import ldap
 import ldap.modlist as modlist
 import logging
 
+
 def join_to_gerrit(local_salt_client, gerrit_user, gerrit_password):
-    gerrit_port = local_salt_client.pillar_get(
+    # Workaround for issue in test_drivetrain.join_to_jenkins https://github.com/kennethreitz/requests/issues/3829
+    os.environ["PYTHONHTTPSVERIFY"] = "0"
+
+    pytest.gerrit_port = local_salt_client.pillar_get(
         tgt='I@gerrit:client and not I@salt:master',
         param='_param:haproxy_gerrit_bind_port',
         expr_form='compound')
-    gerrit_address = local_salt_client.pillar_get(
+    pytest.gerrit_address = local_salt_client.pillar_get(
         tgt='I@gerrit:client and not I@salt:master',
         param='_param:haproxy_gerrit_bind_host',
         expr_form='compound')
-    url = 'http://{0}:{1}'.format(gerrit_address,gerrit_port)
+
+    pytest.gerrit_protocol = local_salt_client.pillar_get(
+        tgt='I@gerrit:client and not I@salt:master',
+        param="gerrit:client:server:protocol",
+        expr_form='compound')
+
+    gerrit_url = '{protocol}://{address}:{port}'.format(
+        protocol=pytest.gerrit_protocol,
+        address=pytest.gerrit_address,
+        port=pytest.gerrit_port)
     auth = HTTPBasicAuth(gerrit_user, gerrit_password)
-    rest = GerritRestAPI(url=url, auth=auth)
+    rest = GerritRestAPI(url=gerrit_url, auth=auth)
     return rest
 
 
 def join_to_jenkins(local_salt_client, jenkins_user, jenkins_password):
-    jenkins_port = local_salt_client.pillar_get(
+
+    pytest.jenkins_port = local_salt_client.pillar_get(
         tgt='I@jenkins:client and not I@salt:master',
         param='_param:haproxy_jenkins_bind_port',
         expr_form='compound')
-    jenkins_address = local_salt_client.pillar_get(
+    pytest.jenkins_address = local_salt_client.pillar_get(
         tgt='I@jenkins:client and not I@salt:master',
         param='_param:haproxy_jenkins_bind_host',
         expr_form='compound')
-    jenkins_url = 'http://{0}:{1}'.format(jenkins_address,jenkins_port)
+    pytest.jenkins_protocol = local_salt_client.pillar_get(
+        tgt='I@gerrit:client and not I@salt:master',
+        param="_param:jenkins_master_protocol",
+        expr_form='compound')
+
+    jenkins_url = '{protocol}://{address}:{port}'.format(
+        protocol=pytest.jenkins_protocol,
+        address=pytest.jenkins_address,
+        port=pytest.jenkins_port)
     server = jenkins.Jenkins(jenkins_url, username=jenkins_user, password=jenkins_password)
     return server
 
@@ -50,58 +72,63 @@ def get_password(local_salt_client,service):
 
 @pytest.mark.full
 def test_drivetrain_gerrit(local_salt_client, check_cicd):
-    gerrit_password = get_password(local_salt_client,'gerrit:client')
+
+    gerrit_password = get_password(local_salt_client, 'gerrit:client')
     gerrit_error = ''
     current_date = time.strftime("%Y%m%d-%H.%M.%S", time.localtime())
     test_proj_name = "test-dt-{0}".format(current_date)
-    gerrit_port = local_salt_client.pillar_get(
-        tgt='I@gerrit:client and not I@salt:master',
-        param='_param:haproxy_gerrit_bind_port',
-        expr_form='compound')
-    gerrit_address = local_salt_client.pillar_get(
-        tgt='I@gerrit:client and not I@salt:master',
-        param='_param:haproxy_gerrit_bind_host',
-        expr_form='compound')
+
     try:
-        #Connecting to gerrit and check connection
-        server = join_to_gerrit(local_salt_client,'admin',gerrit_password)
+        # Connecting to gerrit and check connection
+        server = join_to_gerrit(local_salt_client, 'admin', gerrit_password)
         gerrit_check = server.get("/changes/?q=owner:self%20status:open")
-        #Check deleteproject plugin and skip test if the plugin is not installed
+        # Check deleteproject plugin and skip test if the plugin is not installed
         gerrit_plugins = server.get("/plugins/?all")
         if 'deleteproject' not in gerrit_plugins:
             pytest.skip("Delete-project plugin is not installed")
-        #Create test project and add description
+        # Create test project and add description
         server.put("/projects/"+test_proj_name)
-        server.put("/projects/"+test_proj_name+"/description",json={"description":"Test DriveTrain project","commit_message": "Update the project description"})
+        server.put("/projects/"+test_proj_name+"/description",
+                   json={"description": "Test DriveTrain project", "commit_message": "Update the project description"})
     except HTTPError as e:
         gerrit_error = e
     try:
-        #Create test folder and init git
+        # Create test folder and init git
         repo_dir = os.path.join(os.getcwd(),test_proj_name)
         file_name = os.path.join(repo_dir, current_date)
         repo = git.Repo.init(repo_dir)
-        #Add remote url for this git repo
-        origin = repo.create_remote('origin', 'http://admin:{1}@{2}:{3}/{0}.git'.format(test_proj_name,gerrit_password,gerrit_address,gerrit_port))
-        #Add commit-msg hook to automatically add Change-Id to our commit
-        os.system("curl -Lo {0}/.git/hooks/commit-msg 'http://admin:{1}@{2}:{3}/tools/hooks/commit-msg' > /dev/null 2>&1".format(repo_dir,gerrit_password,gerrit_address,gerrit_port))
+        # Add remote url for this git repo
+        origin = repo.create_remote('origin', '{http}://admin:{password}@{address}:{port}/{project}.git'.format(
+            project=test_proj_name,
+            password=gerrit_password,
+            http=pytest.gerrit_protocol,
+            address=pytest.gerrit_address,
+            port=pytest.gerrit_port))
+        # Add commit-msg hook to automatically add Change-Id to our commit
+        os.system("curl -Lo {repo}/.git/hooks/commit-msg '{http}://admin:{password}@{address}:{port}/tools/hooks/commit-msg' > /dev/null 2>&1".format(
+            repo=repo_dir,
+            password=gerrit_password,
+            address=pytest.gerrit_address,
+            http=pytest.gerrit_protocol,
+            port=pytest.gerrit_port))
         os.system("chmod u+x {0}/.git/hooks/commit-msg".format(repo_dir))
-        #Create a test file
+        # Create a test file
         f = open(file_name, 'w+')
         f.write("This is a test file for DriveTrain test")
         f.close()
-        #Add file to git and commit it to Gerrit for review
+        # Add file to git and commit it to Gerrit for review
         repo.index.add([file_name])
         repo.index.commit("This is a test commit for DriveTrain test")
         repo.git.push("origin", "HEAD:refs/for/master")
-        #Get change id from Gerrit. Set Code-Review +2 and submit this change
+        # Get change id from Gerrit. Set Code-Review +2 and submit this change
         changes = server.get("/changes/?q=project:{0}".format(test_proj_name))
         last_change = changes[0].get('change_id')
-        server.post("/changes/{0}/revisions/1/review".format(last_change),json={"message": "All is good","labels":{"Code-Review":"+2"}})
+        server.post("/changes/{0}/revisions/1/review".format(last_change), json={"message": "All is good","labels":{"Code-Review":"+2"}})
         server.post("/changes/{0}/submit".format(last_change))
     except HTTPError as e:
         gerrit_error = e
     finally:
-        #Delete test project
+        # Delete test project
         server.post("/projects/"+test_proj_name+"/deleteproject~delete")
     assert gerrit_error == '',\
         'Something is wrong with Gerrit'.format(gerrit_error)
@@ -123,8 +150,8 @@ def test_drivetrain_openldap(local_salt_client, check_cicd):
     """
 
     # TODO split to several test cases. One check - per one test method. Make the login process in fixture
-    ldap_password = get_password(local_salt_client,'openldap:client')
-    #Check that ldap_password is exists, otherwise skip test
+    ldap_password = get_password(local_salt_client, 'openldap:client')
+    # Check that ldap_password is exists, otherwise skip test
     if not ldap_password:
         pytest.skip("Openldap service or openldap:client pillar \
         are not found on this environment.")
@@ -148,12 +175,12 @@ def test_drivetrain_openldap(local_salt_client, check_cicd):
     gerrit_result = ''
     gerrit_error = ''
     jenkins_error = ''
-    #Test user's CN
+    # Test user's CN
     test_user_name = 'DT_test_user'
     test_user = 'cn={0},ou=people,{1}'.format(test_user_name,ldap_dc)
-    #Admins group CN
+    # Admins group CN
     admin_gr_dn = 'cn=admins,ou=groups,{0}'.format(ldap_dc)
-    #List of attributes for test user
+    # List of attributes for test user
     attrs = {}
     attrs['objectclass'] = ['organizationalRole', 'simpleSecurityObject', 'shadowAccount']
     attrs['cn'] = test_user_name
@@ -161,29 +188,29 @@ def test_drivetrain_openldap(local_salt_client, check_cicd):
     attrs['userPassword'] = 'aSecretPassw'
     attrs['description'] = 'Test user for CVP DT test'
     searchFilter = 'cn={0}'.format(test_user_name)
-    #Get a test job name from config
+    # Get a test job name from config
     config = utils.get_configuration()
     jenkins_cvp_job = config['jenkins_cvp_job']
-    #Open connection to ldap and creating test user in admins group
+    # Open connection to ldap and creating test user in admins group
     try:
         ldap_server = ldap.initialize(ldap_url)
         ldap_server.simple_bind_s(ldap_con_admin,ldap_password)
         ldif = modlist.addModlist(attrs)
-        ldap_server.add_s(test_user,ldif)
-        ldap_server.modify_s(admin_gr_dn,[(ldap.MOD_ADD, 'memberUid', [test_user_name],)],)
-        #Check search test user in LDAP
+        ldap_server.add_s(test_user, ldif)
+        ldap_server.modify_s(admin_gr_dn, [(ldap.MOD_ADD, 'memberUid', [test_user_name],)],)
+        # Check search test user in LDAP
         searchScope = ldap.SCOPE_SUBTREE
         ldap_result = ldap_server.search_s(ldap_dc, searchScope, searchFilter)
     except ldap.LDAPError as e:
         ldap_error = e
     try:
-        #Check connection between Jenkins and LDAP
+        # Check connection between Jenkins and LDAP
         jenkins_server = join_to_jenkins(local_salt_client,test_user_name,'aSecretPassw')
         jenkins_version = jenkins_server.get_job_name(jenkins_cvp_job)
-        #Check connection between Gerrit and LDAP
+        # Check connection between Gerrit and LDAP
         gerrit_server = join_to_gerrit(local_salt_client,'admin',ldap_password)
         gerrit_check = gerrit_server.get("/changes/?q=owner:self%20status:open")
-        #Add test user to devops-contrib group in Gerrit and check login
+        # Add test user to devops-contrib group in Gerrit and check login
         _link = "/groups/devops-contrib/members/{0}".format(test_user_name)
         gerrit_add_user = gerrit_server.put(_link)
         gerrit_server = join_to_gerrit(local_salt_client,test_user_name,'aSecretPassw')
@@ -280,6 +307,7 @@ def test_jenkins_jobs_branch(local_salt_client, check_cicd):
     """ This test compares Jenkins jobs versions
         collected from the cloud vs collected from pillars.
     """
+
     excludes = ['upgrade-mcp-release', 'deploy-update-salt',
                 'git-mirror-downstream-mk-pipelines',
                 'git-mirror-downstream-pipeline-library']
