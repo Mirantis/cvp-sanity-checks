@@ -184,8 +184,8 @@ def calculate_groups():
     if all_nodes:
         logging.info("These nodes were not collected {0}. Check config (groups section)".format(all_nodes))
     return node_groups
-                
-            
+
+
 def get_configuration():
     """function returns configuration for environment
     and for test if it's specified"""
@@ -193,7 +193,7 @@ def get_configuration():
     global_config_file = os.path.join(
         os.path.dirname(os.path.abspath(__file__)), "../global_config.yaml")
     with open(global_config_file, 'r') as file:
-        global_config = yaml.load(file)
+        global_config = yaml.load(file, Loader=yaml.SafeLoader)
     for param in global_config.keys():
         if param in os.environ.keys():
             if ',' in os.environ[param]:
