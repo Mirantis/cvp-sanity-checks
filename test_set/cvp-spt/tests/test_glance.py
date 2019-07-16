@@ -24,11 +24,11 @@ def create_image():
     create_file_cmdline = 'dd if=/dev/zero of=/tmp/image_mk_framework.dd bs=1M count={image_size}'.format(
         image_size=image_size_megabytes)
 
-    is_cmd_successful = subprocess.call(create_file_cmdline.split()) == 0
+    is_cmd_successful = subprocess.call(create_file_cmdline, shell=True) == 0
     yield is_cmd_successful
     # teardown
-    subprocess.call('rm -f /tmp/image_mk_framework.dd'.split())
-    subprocess.call('rm -f /tmp/image_mk_framework.download'.split())
+    subprocess.call('rm -f /tmp/image_mk_framework.dd', shell=True)
+    subprocess.call('rm -f /tmp/image_mk_framework.download', shell=True)
 
 
 def test_speed_glance(create_image, openstack_clients, record_property):

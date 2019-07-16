@@ -98,7 +98,7 @@ def get_configuration():
     global_config_file = os.path.join(
         os.path.dirname(os.path.abspath(__file__)), "../global_config.yaml")
     with open(global_config_file, 'r') as file:
-        global_config = yaml.load(file)
+        global_config = yaml.load(file, Loader=yaml.SafeLoader)
     for param in global_config.keys():
         if param in os.environ.keys():
             if ',' in os.environ[param]:

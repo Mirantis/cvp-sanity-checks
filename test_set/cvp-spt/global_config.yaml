@@ -29,3 +29,9 @@ CMP_HOSTS: []
 nova_timeout: 30
 iperf_prep_string: "sudo /bin/bash -c 'echo \"91.189.88.161        archive.ubuntu.com\" >> /etc/hosts'"
 IMAGE_SIZE_MB: 2000
+
+# parameters for vm2vm test
+flavor_name: 'spt-test'
+flavor_ram: 1536
+flavor_vcpus: 1
+flavor_disk: 5
