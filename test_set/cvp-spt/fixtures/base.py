@@ -53,7 +53,11 @@ def os_resources(openstack_clients):
     os_actions = os_client.OSCliActions(openstack_clients)
     os_resource = {}
     config = utils.get_configuration()
-    image_name = config.get('image_name') or ['Ubuntu']
+    image_name = config.get('image_name', 'Ubuntu')
+    flavor_name = config.get('flavor_name', 'spt-test')
+    flavor_ram = config.get('flavor_ram', 1536)
+    flavor_vcpus = config.get('flavor_vcpus', 1)
+    flavor_disk = config.get('flavor_disk', 3)
 
     os_images_list = [image.id for image in openstack_clients.image.images.list(filters={'name': image_name})]
     if os_images_list.__len__() == 0:
@@ -61,14 +65,15 @@ def os_resources(openstack_clients):
 
     os_resource['image_id'] = str(os_images_list[0])
 
-    os_resource['flavor_id'] = [flavor.id for flavor in openstack_clients.compute.flavors.list() if flavor.name == 'spt-test']
+    os_resource['flavor_id'] = [flavor.id for flavor in openstack_clients.compute.flavors.list() if flavor.name == flavor_name]
     if not os_resource['flavor_id']:
-        os_resource['flavor_id'] = os_actions.create_flavor('spt-test', 1536, 1, 3).id
+        os_resource['flavor_id'] = os_actions.create_flavor(flavor_name, flavor_ram, flavor_vcpus, flavor_disk).id
     else:
         os_resource['flavor_id'] = str(os_resource['flavor_id'][0])
 
     os_resource['sec_group'] = os_actions.create_sec_group()
-    os_resource['keypair'] = openstack_clients.compute.keypairs.create('spt-test-{}'.format(random.randrange(100, 999)))
+    os_resource['keypair'] = openstack_clients.compute.keypairs.create(
+        '{}-{}'.format(flavor_name, random.randrange(100, 999)))
     os_resource['net1'] = os_actions.create_network_resources()
     os_resource['ext_net'] = os_actions.get_external_network()
     adm_tenant = os_actions.get_admin_tenant()
