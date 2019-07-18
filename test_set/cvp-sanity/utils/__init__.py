@@ -106,6 +106,10 @@ class salt_remote:
         """
         This method is for fetching pillars only.
         Returns value for pillar, False (if no such pillar) or if fail_if_empty=True - exception
+        :param tgt, string, target when the salt command will be executed
+        :param param, additional parameter for salt command
+        :param expr_form
+        :param fail_if_empty
         """
         response = self.cmd(tgt=tgt, fun='pillar.get', param=param, expr_form=expr_form)
         for node in response.keys():
