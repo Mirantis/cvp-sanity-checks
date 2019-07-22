@@ -1,6 +1,8 @@
+import pytest
 import json
 
 
+@pytest.mark.xfail(reason='PROD-31892')
 def test_sysctl_variables(local_salt_client, nodes_in_group):
     """
     # Request kernel setting from linux:system:kernel:sysctl
