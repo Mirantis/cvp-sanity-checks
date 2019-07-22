@@ -284,12 +284,21 @@ def test_drivetrain_components_and_versions(local_salt_client, check_cicd):
     table_with_docker_services = local_salt_client.cmd(tgt='I@gerrit:client',
                                                        param='docker service ls --format "{{.Image}}"',
                                                        expr_form='compound')
-    expected_images = local_salt_client.pillar_get(tgt='gerrit:client',
-                                                   param='docker:client:images')
+    stack_info = local_salt_client.pillar_get(tgt='gerrit:client',
+                                                   param='docker:client:stack')
+
+    expected_images = list()
+    # find services in list of docker clients
+    for key, stack in stack_info.items():
+        if stack.get('service'):
+            stack = [item.get('image') for _,item in stack.get('service').items() if item.get('image')]
+            expected_images += stack
+
     mismatch = {}
     actual_images = {}
     for image in set(table_with_docker_services[table_with_docker_services.keys()[0]].split('\n')):
         actual_images[get_name(image)] = get_tag(image)
+
     for image in set(expected_images):
         im_name = get_name(image)
         if im_name not in actual_images:
