@@ -3,9 +3,28 @@ import json
 import utils
 import logging
 
+def is_deb_in_exception(package_name, error_node_list):
+    # defines packages specific to the concrete nodes
+    inconsistency_rule = {"kvm03": ["rsync", "sysstat", "xz-utils"], "log01": ["python-elasticsearch"]}
+    short_names_in_error_nodes = [n.split('.')[0] for n in error_node_list]
+    for node, excluded_packages in inconsistency_rule.iteritems():
+        if package_name in excluded_packages and node in short_names_in_error_nodes:
+            return True
+    return False
 
 @pytest.mark.full
 def test_check_package_versions(local_salt_client, nodes_in_group):
+    """Validate package has same versions on all the nodes.
+    Steps:
+     1) Collect packages for nodes_in_group
+        "salt -C '<group_of_nodes>' cmd.run 'lowpkg.list_pkgs'"
+     2) Exclude nodes without packages and exceptions
+     3) Go through each package and save it with version from each node to the 
+        list. Mark 'No version' if package is not found.
+        If pachage name in the eception list or in inconsistency_rule, ignore it.
+     4) Compare items in that list - they should be equal and match the amout of nodes
+
+    """
     exclude_packages = utils.get_configuration().get("skipped_packages", [])
     packages_versions = local_salt_client.cmd(tgt="L@"+','.join(nodes_in_group),
                                               fun='lowpkg.list_pkgs',
@@ -13,7 +32,6 @@ def test_check_package_versions(local_salt_client, nodes_in_group):
     # Let's exclude cid01 and dbs01 nodes from this check
     exclude_nodes = local_salt_client.test_ping(tgt="I@galera:master or I@gerrit:client",
                                                 expr_form='compound').keys()
-
     # PROD-30833
     gtw01 = local_salt_client.pillar_get(
         param='_param:openstack_gateway_node01_hostname') or 'gtw01'
@@ -30,12 +48,11 @@ def test_check_package_versions(local_salt_client, nodes_in_group):
             exclude_nodes.append(gtw01)
             logging.info("gtw01 node is skipped in test_check_package_versions")
 
-    total_nodes = [i for i in packages_versions.keys() if i not in exclude_nodes]
+    total_nodes = [i for i in nodes_in_group if i not in exclude_nodes]
     if len(total_nodes) < 2:
         pytest.skip("Nothing to compare - only 1 node")
-
-    nodes = []
-    pkts_data = []
+    nodes_with_packages = []
+    packages_with_different_versions = []
     packages_names = set()
 
     for node in total_nodes:
@@ -43,15 +60,14 @@ def test_check_package_versions(local_salt_client, nodes_in_group):
             # TODO: do not skip node
             logging.warning("Node {} is skipped".format(node))
             continue
-        nodes.append(node)
+        nodes_with_packages.append(node)
         packages_names.update(packages_versions[node].keys())
-
     for deb in packages_names:
         if deb in exclude_packages:
             continue
         diff = []
         row = []
-        for node in nodes:
+        for node in nodes_with_packages:
             if not packages_versions[node]:
                 continue
             if deb in packages_versions[node].keys():
@@ -59,13 +75,15 @@ def test_check_package_versions(local_salt_client, nodes_in_group):
                 row.append("{}: {}".format(node, packages_versions[node][deb]))
             else:
                 row.append("{}: No package".format(node))
-        if diff.count(diff[0]) < len(nodes):
-            row.sort()
-            row.insert(0, deb)
-            pkts_data.append(row)
-    assert len(pkts_data) <= 1, \
+
+        if diff.count(diff[0]) < len(nodes_with_packages):
+           if not is_deb_in_exception(deb, row):
+                row.sort()
+                row.insert(0, deb)
+                packages_with_different_versions.append(row)
+    assert len(packages_with_different_versions) == 0, \
         "Several problems found: {0}".format(
-        json.dumps(pkts_data, indent=4))
+        json.dumps(packages_with_different_versions, indent=4))
 
 
 @pytest.mark.full
