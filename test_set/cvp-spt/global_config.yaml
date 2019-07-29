@@ -26,7 +26,7 @@ networks: "10.101.0.0/24"
 external_network: ''
 HW_NODES: []
 CMP_HOSTS: []
-nova_timeout: 30
+nova_timeout: 90
 iperf_prep_string: "sudo /bin/bash -c 'echo \"91.189.88.161        archive.ubuntu.com\" >> /etc/hosts'"
 IMAGE_SIZE_MB: 2000
 
