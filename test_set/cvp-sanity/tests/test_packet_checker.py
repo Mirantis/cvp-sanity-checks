@@ -3,9 +3,7 @@ import json
 import utils
 import logging
 
-def is_deb_in_exception(package_name, error_node_list):
-    # defines packages specific to the concrete nodes
-    inconsistency_rule = {"kvm03": ["rsync", "sysstat", "xz-utils"], "log01": ["python-elasticsearch"]}
+def is_deb_in_exception(inconsistency_rule, package_name, error_node_list):
     short_names_in_error_nodes = [n.split('.')[0] for n in error_node_list]
     for node, excluded_packages in inconsistency_rule.iteritems():
         if package_name in excluded_packages and node in short_names_in_error_nodes:
@@ -19,12 +17,14 @@ def test_check_package_versions(local_salt_client, nodes_in_group):
      1) Collect packages for nodes_in_group
         "salt -C '<group_of_nodes>' cmd.run 'lowpkg.list_pkgs'"
      2) Exclude nodes without packages and exceptions
-     3) Go through each package and save it with version from each node to the 
+     3) Go through each package and save it with version from each node to the
         list. Mark 'No version' if package is not found.
         If pachage name in the eception list or in inconsistency_rule, ignore it.
      4) Compare items in that list - they should be equal and match the amout of nodes
 
     """
+    # defines packages specific to the concrete nodes
+    inconsistency_rule = {"kvm03": ["rsync", "sysstat", "xz-utils"], "log01": ["python-elasticsearch"], "ctl01": ["python-gnocchiclient", "python-ujson"]}
     exclude_packages = utils.get_configuration().get("skipped_packages", [])
     packages_versions = local_salt_client.cmd(tgt="L@"+','.join(nodes_in_group),
                                               fun='lowpkg.list_pkgs',
@@ -77,7 +77,7 @@ def test_check_package_versions(local_salt_client, nodes_in_group):
                 row.append("{}: No package".format(node))
 
         if diff.count(diff[0]) < len(nodes_with_packages):
-           if not is_deb_in_exception(deb, row):
+           if not is_deb_in_exception(inconsistency_rule, deb, row):
                 row.sort()
                 row.insert(0, deb)
                 packages_with_different_versions.append(row)
@@ -110,6 +110,8 @@ def test_packages_are_latest(local_salt_client, nodes_in_group):
 
 @pytest.mark.full
 def test_check_module_versions(local_salt_client, nodes_in_group):
+    # defines modules specific to the concrete nodes
+    inconsistency_rule = {"ctl01": ["gnocchiclient", "ujson"], "log01": ["elasticsearch"]}
     exclude_modules = utils.get_configuration().get("skipped_modules", [])
     pre_check = local_salt_client.cmd(
         tgt="L@"+','.join(nodes_in_group),
@@ -144,13 +146,13 @@ def test_check_module_versions(local_salt_client, nodes_in_group):
     list_of_pip_packages = local_salt_client.cmd(tgt="L@"+','.join(nodes_in_group),
                                    fun='pip.freeze', expr_form='compound')
 
-    nodes = []
+    nodes_with_packages = []
 
-    pkts_data = []
+    modules_with_different_versions = []
     packages_names = set()
 
     for node in total_nodes:
-        nodes.append(node)
+        nodes_with_packages.append(node)
         packages_names.update([x.split("=")[0] for x in list_of_pip_packages[node]])
         list_of_pip_packages[node] = dict([x.split("==") for x in list_of_pip_packages[node]])
 
@@ -159,17 +161,18 @@ def test_check_module_versions(local_salt_client, nodes_in_group):
             continue
         diff = []
         row = []
-        for node in nodes:
+        for node in nodes_with_packages:
             if deb in list_of_pip_packages[node].keys():
                 diff.append(list_of_pip_packages[node][deb])
                 row.append("{}: {}".format(node, list_of_pip_packages[node][deb]))
             else:
                 row.append("{}: No module".format(node))
-        if diff.count(diff[0]) < len(nodes):
-            row.sort()
-            row.insert(0, deb)
-            pkts_data.append(row)
-    assert len(pkts_data) <= 1, \
+        if diff.count(diff[0]) < len(nodes_with_packages):
+            if not is_deb_in_exception(inconsistency_rule, deb, row):
+                row.sort()
+                row.insert(0, deb)
+                modules_with_different_versions.append(row)
+    assert len(modules_with_different_versions) == 0, \
         "Several problems found: {0}".format(
-        json.dumps(pkts_data, indent=4))
+        json.dumps(modules_with_different_versions, indent=4))
 
