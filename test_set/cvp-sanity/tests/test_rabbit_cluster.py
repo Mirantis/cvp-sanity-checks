@@ -44,9 +44,9 @@ def test_checking_rabbitmq_cluster(local_salt_client):
         if required_cluster_size_dict[node] != running_nodes_count:
             control_dict.update({node: running_nodes_count})
 
-    assert not len(control_dict), "Inconsistency found within cloud. " \
-                                  "RabbitMQ cluster is probably broken, " \
-                                  "the cluster size for each node " \
-                                  "should be: {} but the following " \
-                                  "nodes has other values: {}".format(
-        len(required_cluster_size_dict.keys()), control_dict)
+    assert not len(control_dict), (
+        "RabbitMQ cluster is probably "
+        "broken - the cluster size for each node should be ({}),\nbut the "
+        "following nodes have other values:\n{}".format(
+            len(required_cluster_size_dict.keys()), control_dict)
+    )

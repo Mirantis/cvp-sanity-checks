@@ -9,9 +9,8 @@ def test_ceph_osd(local_salt_client):
         expr_form='pillar')
     if not osd_fail:
         pytest.skip("Ceph is not found on this environment")
-    assert not osd_fail.values()[0], \
-        "Some osds are in down state or ceph is not found".format(
-        osd_fail.values()[0])
+    assert not osd_fail.values()[0], (
+        "Some OSDs are in down state:\n{}".format(osd_fail.values()[0]))
 
 
 def test_ceph_health(local_salt_client):
@@ -32,5 +31,4 @@ def test_ceph_health(local_salt_client):
     else:
         summary = status["summary"]
 
-    assert health == "HEALTH_OK",\
-        "Ceph status is not expected. {}".format(summary)
+    assert health == "HEALTH_OK", "Ceph is not healthy:\n{}".format(summary)

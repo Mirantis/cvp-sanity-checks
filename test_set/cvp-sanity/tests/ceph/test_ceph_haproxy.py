@@ -19,4 +19,4 @@ def test_ceph_haproxy(local_salt_client):
             continue
         else:
             fail[name] = info
-    assert not fail, "Failed monitors: {}".format(fail)
+    assert not fail, "Some Ceph monitors are in wrong state:\n{}".format(fail)

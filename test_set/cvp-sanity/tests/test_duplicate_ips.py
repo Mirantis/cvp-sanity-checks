@@ -50,5 +50,5 @@ def test_duplicate_ips(local_salt_client):
 
         msg = ("\nDuplicate IP addresses found:\n{}"
                "\n\nThe following interfaces are affected:\n{}"
-                "".format(pformat(dup_ips), pformat(dup_ifaces)))
+               "".format(pformat(dup_ips), pformat(dup_ifaces)))
         assert no_dups, msg

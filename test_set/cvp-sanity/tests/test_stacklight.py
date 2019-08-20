@@ -18,26 +18,23 @@ def test_elasticsearch_cluster(local_salt_client):
 
     proxies = {"http": None, "https": None}
     IP = salt_output
-    assert requests.get('{0}://{1}:9200/'.format(proto, IP),
-                        proxies=proxies, verify=False).status_code == 200, \
-        'Cannot check elasticsearch url on {}.'.format(IP)
-    resp = requests.get('{0}://{1}:9200/_cat/health'.format(proto, IP),
-                        proxies=proxies, verify=False).content
-    assert resp.split()[3] == 'green', \
-        'elasticsearch status is not good {}'.format(
-        json.dumps(resp, indent=4))
-    assert resp.split()[4] == '3', \
-        'elasticsearch status is not good {}'.format(
-        json.dumps(resp, indent=4))
-    assert resp.split()[5] == '3', \
-        'elasticsearch status is not good {}'.format(
-        json.dumps(resp, indent=4))
-    assert resp.split()[10] == '0', \
-        'elasticsearch status is not good {}'.format(
-        json.dumps(resp, indent=4))
-    assert resp.split()[13] == '100.0%', \
-        'elasticsearch status is not good {}'.format(
-        json.dumps(resp, indent=4))
+    response = requests.get(
+        '{0}://{1}:9200/'.format(proto, IP),
+        proxies=proxies,
+        verify=False)
+    assert response.status_code == 200, (
+        "Issues with accessing elasticsearch on {}.".format(IP))
+    response = requests.get(
+        '{0}://{1}:9200/_cat/health'.format(proto, IP),
+        proxies=proxies,
+        verify=False).content
+    msg = "elasticsearch is not healthy:\n{}".format(
+        json.dumps(response, indent=4))
+    assert response.split()[3] == 'green',msg
+    assert response.split()[4] == '3', msg
+    assert response.split()[5] == '3', msg
+    assert response.split()[10] == '0', msg
+    assert response.split()[13] == '100.0%', msg
 
 
 @pytest.mark.sl_dup
@@ -52,15 +49,18 @@ def test_kibana_status(local_salt_client):
         param='haproxy:proxy:listen:kibana:binds:ssl:enabled')
     proto = "https" if ssl else "http"
 
-    resp = requests.get('{0}://{1}:5601/api/status'.format(proto, IP),
-                        proxies=proxies, verify=False).content
-    body = json.loads(resp)
-    assert body['status']['overall']['state'] == "green", \
-        "Kibana status is not expected: {}".format(
-        body['status']['overall'])
+    response = requests.get(
+        '{0}://{1}:5601/api/status'.format(proto, IP),
+        proxies=proxies,
+        verify=False).content
+    body = json.loads(response)
+    assert body['status']['overall']['state'] == "green", (
+        "Kibana overall status is not 'green':\n{}".format(
+            body['status']['overall'])
+    )
     for i in body['status']['statuses']:
-        assert i['state'] == "green", \
-            "Kibana statuses are unexpected: {}".format(i)
+        assert i['state'] == "green", (
+            "Kibana statuses are unexpected:\n{}".format(i))
 
 
 @pytest.mark.smoke
@@ -89,10 +89,12 @@ def test_elasticsearch_node_count(local_salt_client):
         '{0}://{1}:9200/log-{2}/_search?pretty'.format(proto, IP, today),
         proxies=proxies,
         headers=headers,
-        verify = False,
+        verify=False,
         data=data)
-    assert 200 == response.status_code, 'Unexpected code {}'.format(
-        response.text)
+    assert response.status_code == 200, (
+        'Issues with accessing elasticsearch on {}:\n{}'.format(
+            IP, response.text)
+    )
     resp = json.loads(response.text)
     cluster_domain = local_salt_client.pillar_get(param='_param:cluster_domain')
     monitored_nodes = []
@@ -104,10 +106,11 @@ def test_elasticsearch_node_count(local_salt_client):
     for node in all_nodes:
         if node not in monitored_nodes:
             missing_nodes.append(node)
-    assert len(missing_nodes) == 0, \
-        'Not all nodes are in Elasticsearch. Found {0} keys, ' \
-        'expected {1}. Missing nodes: \n{2}'. \
-            format(len(monitored_nodes), len(all_nodes), missing_nodes)
+    assert len(missing_nodes) == 0, (
+        "Not all nodes are in Elasticsearch. Expected {}, but found {} keys.\n"
+        "Missing nodes:\n{}".format(
+            len(monitored_nodes), len(all_nodes), missing_nodes)
+    )
 
 
 @pytest.mark.sl_dup
@@ -130,9 +133,10 @@ def test_stacklight_services_replicas(local_salt_client):
         if line[line.find('/') - 1] != line[line.find('/') + 1] \
            and 'replicated' in line:
             wrong_items.append(line)
-    assert len(wrong_items) == 0, \
-        '''Some monitoring services doesn't have expected number of replicas:
-              {}'''.format(json.dumps(wrong_items, indent=4))
+    assert len(wrong_items) == 0, (
+        "Some monitoring services don't have the expected number of "
+        "replicas:\n{}".format(json.dumps(wrong_items, indent=4))
+    )
 
 
 @pytest.mark.smoke
@@ -152,8 +156,8 @@ def test_prometheus_alert_count(local_salt_client, ctl_nodes_pillar):
 
     result = nodes_info[nodes_info.keys()[0]].replace('</td>', '').replace(
         '<td><i class="icon-chevron-down"></i> <b>', '').replace('</b>', '')
-    assert result == '', 'AlertManager page has some alerts! {}'.format(
-                         json.dumps(result), indent=4)
+    assert result == '', 'AlertManager page has some alerts!\n{}'.format(
+        json.dumps(result), indent=4)
 
 
 @pytest.mark.sl_dup
@@ -166,8 +170,8 @@ def test_stacklight_containers_status(local_salt_client):
         expr_form='compound')
 
     if not salt_output:
-        pytest.skip("docker:swarm:role:master or prometheus:server \
-        pillars are not found on this environment.")
+        pytest.skip("docker:swarm:role:master or prometheus:server pillars "
+                    "are not found on this environment.")
 
     result = {}
     # for old reclass models, docker:swarm:role:master can return
@@ -185,9 +189,10 @@ def test_stacklight_containers_status(local_salt_client):
         if line.split()[4 + shift] == 'Running' \
            or line.split()[4 + shift] == 'Ready':
             result[line.split()[1 + shift]] = 'OK'
-    assert 'NOT OK' not in result.values(), \
-        '''Some containers are in incorrect state:
-              {}'''.format(json.dumps(result, indent=4))
+    assert 'NOT OK' not in result.values(), (
+        "Some containers have incorrect state:\n{}".format(
+            json.dumps(result, indent=4))
+    )
 
 
 @pytest.mark.sl_dup
@@ -200,14 +205,16 @@ def test_running_telegraf_services(local_salt_client):
                                         expr_form='pillar',)
 
     if not salt_output:
-        pytest.skip("Telegraf or telegraf:agent \
-        pillar are not found on this environment.")
+        pytest.skip("Telegraf or telegraf:agent pillars are not found on "
+                    "this environment.")
 
     result = [{node: status} for node, status
               in salt_output.items()
               if status is False]
-    assert result == [], 'Telegraf service is not running ' \
-                         'on following nodes: {}'.format(result)
+    assert result == [], (
+        "Telegraf service is not running on the following nodes:\n{}".format(
+            result)
+    )
 
 
 @pytest.mark.sl_dup
@@ -221,5 +228,7 @@ def test_running_fluentd_services(local_salt_client):
     result = [{node: status} for node, status
               in salt_output.items()
               if status is False]
-    assert result == [], 'Fluentd check failed: td-agent service is not ' \
-                         'running on following nodes:'.format(result)
+    assert result == [], (
+        "Fluentd check failed - td-agent service is not running on the "
+        "following nodes:\n{}".format(result)
+    )

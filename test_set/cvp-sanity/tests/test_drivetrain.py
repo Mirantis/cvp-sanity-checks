@@ -130,8 +130,8 @@ def test_drivetrain_gerrit(local_salt_client, check_cicd):
     finally:
         # Delete test project
         server.post("/projects/"+test_proj_name+"/deleteproject~delete")
-    assert gerrit_error == '',\
-        'Something is wrong with Gerrit'.format(gerrit_error)
+    assert gerrit_error == '', (
+        'There is an error during Gerrit operations:\n{}'.format(gerrit_error))
 
 
 @pytest.mark.full
@@ -223,17 +223,13 @@ def test_drivetrain_openldap(local_salt_client, check_cicd):
         ldap_server.modify_s(admin_gr_dn,[(ldap.MOD_DELETE, 'memberUid', [test_user_name],)],)
         ldap_server.delete_s(test_user)
         ldap_server.unbind_s()
-    assert ldap_error == '', \
-        '''Something is wrong with connection to LDAP:
-            {0}'''.format(e)
-    assert jenkins_error == '', \
-        '''Connection to Jenkins was not established:
-            {0}'''.format(e)
-    assert gerrit_error == '', \
-        '''Connection to Gerrit was not established:
-            {0}'''.format(e)
-    assert ldap_result !=[], \
-        '''Test user was not found'''
+    assert ldap_error == '', (
+        "There is an error with connection to LDAP:\n{}".format(e))
+    assert jenkins_error == '', (
+        "Connection to Jenkins is not established:\n{}".format(e))
+    assert gerrit_error == '', (
+        "Connection to Gerrit is not established:\n{}".format(e))
+    assert ldap_result != [], "Test user {} is not found".format(ldap_result)
 
 
 @pytest.mark.sl_dup
@@ -260,10 +256,11 @@ def test_drivetrain_services_replicas(local_salt_client, check_cicd):
         if len(wrong_items) == 0:
             break
         else:
-            logging.error('''Some DriveTrain services doesn't have expected number of replicas:
-                  {}\n'''.format(json.dumps(wrong_items, indent=4)))
             time.sleep(5)
-    assert len(wrong_items) == 0
+    assert len(wrong_items) == 0, (
+        "Some DriveTrain services don't have expected number of replicas:\n"
+        "{}".format(json.dumps(wrong_items, indent=4))
+    )
 
 
 @pytest.mark.full
@@ -306,9 +303,10 @@ def test_drivetrain_components_and_versions(local_salt_client, check_cicd):
         elif get_tag(image) != actual_images[im_name]:
             mismatch[im_name] = 'has {actual} version instead of {expected}'.format(
                 actual=actual_images[im_name], expected=get_tag(image))
-    assert len(mismatch) == 0, \
-        '''Some DriveTrain components do not have expected versions:
-              {}'''.format(json.dumps(mismatch, indent=4))
+    assert len(mismatch) == 0, (
+        "Some DriveTrain components do not have expected versions:\n{}".format(
+            json.dumps(mismatch, indent=4))
+    )
 
 
 @pytest.mark.full
@@ -355,9 +353,10 @@ def test_jenkins_jobs_branch(local_salt_client, check_cicd):
                                     "Expected {2}".format(job_name,
                                                           actual_version,
                                                           expected_version))
-    assert len(version_mismatch) == 0, \
-        '''Some DriveTrain jobs have version/branch mismatch:
-              {}'''.format(json.dumps(version_mismatch, indent=4))
+    assert len(version_mismatch) == 0, (
+        "Some DriveTrain jobs have version/branch mismatch:\n{}".format(
+            json.dumps(version_mismatch, indent=4))
+    )
 
 
 @pytest.mark.full
@@ -399,6 +398,7 @@ def test_drivetrain_jenkins_job(local_salt_client, check_cicd):
         job_result = server.get_build_info(jenkins_test_job, next_build_num)['result']
     else:
         pytest.skip("The job {0} was not found").format(jenkins_test_job)
-    assert job_result == 'SUCCESS', \
-        '''Test job '{0}' build was not successful or timeout is too small
-         '''.format(jenkins_test_job)
+    assert job_result == 'SUCCESS', (
+        "Test job '{}' build is not successful or timeout is too "
+        "small.".format(jenkins_test_job)
+    )

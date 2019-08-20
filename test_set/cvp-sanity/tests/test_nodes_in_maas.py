@@ -55,8 +55,7 @@ def test_nodes_deployed_in_maas(local_salt_client):
     try:
         result = json.loads(get_nodes.values()[0])
     except ValueError as e:
-        assert result, "Could not get nodes: {}\n{}". \
-            format(get_nodes, e)
+        assert result, "Could not get '{}' nodes:\n{}".format(get_nodes, e)
 
     # 5. Check all nodes are in Deployed status
     failed_nodes = []
@@ -66,5 +65,7 @@ def test_nodes_deployed_in_maas(local_salt_client):
         if "status_name" in node.keys():
             if node["status_name"] != 'Deployed':
                 failed_nodes.append({node["fqdn"]: node["status_name"]})
-    assert not failed_nodes, "Some nodes have unexpected status in MAAS:" \
-                             "\n{}".format(json.dumps(failed_nodes, indent=4))
+    assert not failed_nodes, (
+        "Some nodes have unexpected status in MAAS:\n{}".format(
+            json.dumps(failed_nodes, indent=4))
+    )

@@ -26,7 +26,8 @@ def test_check_package_versions(local_salt_client, nodes_in_group):
     # defines packages specific to the concrete nodes
     inconsistency_rule = {"kvm03": ["rsync", "sysstat", "xz-utils"], "log01": ["python-elasticsearch"], "ctl01": ["python-gnocchiclient", "python-ujson"]}
     exclude_packages = utils.get_configuration().get("skipped_packages", [])
-    packages_versions = local_salt_client.cmd(tgt="L@"+','.join(nodes_in_group),
+    group, nodes = nodes_in_group
+    packages_versions = local_salt_client.cmd(tgt="L@"+','.join(nodes),
                                               fun='lowpkg.list_pkgs',
                                               expr_form='compound')
     # Let's exclude cid01 and dbs01 nodes from this check
@@ -38,8 +39,8 @@ def test_check_package_versions(local_salt_client, nodes_in_group):
     cluster_domain = local_salt_client.pillar_get(
         param='_param:cluster_domain') or '.local'
     gtw01 += '.' + cluster_domain
-    if gtw01 in nodes_in_group:
-        octavia = local_salt_client.cmd(tgt="L@" + ','.join(nodes_in_group),
+    if gtw01 in nodes:
+        octavia = local_salt_client.cmd(tgt="L@" + ','.join(nodes),
                                         fun='pillar.get',
                                         param='octavia:manager:enabled',
                                         expr_form='compound')
@@ -48,7 +49,7 @@ def test_check_package_versions(local_salt_client, nodes_in_group):
             exclude_nodes.append(gtw01)
             logging.info("gtw01 node is skipped in test_check_package_versions")
 
-    total_nodes = [i for i in nodes_in_group if i not in exclude_nodes]
+    total_nodes = [i for i in nodes if i not in exclude_nodes]
     if len(total_nodes) < 2:
         pytest.skip("Nothing to compare - only 1 node")
     nodes_with_packages = []
@@ -77,13 +78,15 @@ def test_check_package_versions(local_salt_client, nodes_in_group):
                 row.append("{}: No package".format(node))
 
         if diff.count(diff[0]) < len(nodes_with_packages):
-           if not is_deb_in_exception(inconsistency_rule, deb, row):
+            if not is_deb_in_exception(inconsistency_rule, deb, row):
                 row.sort()
                 row.insert(0, deb)
                 packages_with_different_versions.append(row)
-    assert len(packages_with_different_versions) == 0, \
-        "Several problems found: {0}".format(
-        json.dumps(packages_with_different_versions, indent=4))
+    assert len(packages_with_different_versions) == 0, (
+        "Non-uniform package versions are installed on '{}' group of nodes:\n"
+        "{}".format(
+            group, json.dumps(packages_with_different_versions, indent=4))
+    )
 
 
 @pytest.mark.full
@@ -93,19 +96,22 @@ def test_packages_are_latest(local_salt_client, nodes_in_group):
     if skip:
         pytest.skip("Test for the latest packages is disabled")
     skipped_pkg = config.get("test_packages")["skipped_packages"]
+    group, nodes = nodes_in_group
     info_salt = local_salt_client.cmd(
-        tgt='L@' + ','.join(nodes_in_group),
+        tgt='L@' + ','.join(nodes),
         param='apt list --upgradable 2>/dev/null | grep -v Listing',
         expr_form='compound')
-    for node in nodes_in_group:
+    for node in nodes:
         result = []
         if info_salt[node]:
             upg_list = info_salt[node].split('\n')
             for i in upg_list:
                 if i.split('/')[0] not in skipped_pkg:
                     result.append(i)
-        assert not result, "Please check not latest packages at {}:\n{}".format(
-            node, "\n".join(result))
+        assert not result, (
+            "Packages are not of latest version on '{}' node:\n{}".format(
+                node, "\n".join(result))
+        )
 
 
 @pytest.mark.full
@@ -113,8 +119,9 @@ def test_check_module_versions(local_salt_client, nodes_in_group):
     # defines modules specific to the concrete nodes
     inconsistency_rule = {"ctl01": ["gnocchiclient", "ujson"], "log01": ["elasticsearch"]}
     exclude_modules = utils.get_configuration().get("skipped_modules", [])
+    group, nodes = nodes_in_group
     pre_check = local_salt_client.cmd(
-        tgt="L@"+','.join(nodes_in_group),
+        tgt="L@"+','.join(nodes),
         param='dpkg -l | grep "python-pip "',
         expr_form='compound')
     if pre_check.values().count('') > 0:
@@ -129,8 +136,8 @@ def test_check_module_versions(local_salt_client, nodes_in_group):
     cluster_domain = local_salt_client.pillar_get(
         param='_param:cluster_domain') or '.local'
     gtw01 += '.' + cluster_domain
-    if gtw01 in nodes_in_group:
-        octavia = local_salt_client.cmd(tgt="L@" + ','.join(nodes_in_group),
+    if gtw01 in nodes:
+        octavia = local_salt_client.cmd(tgt="L@" + ','.join(nodes),
                                         fun='pillar.get',
                                         param='octavia:manager:enabled',
                                         expr_form='compound')
@@ -143,8 +150,9 @@ def test_check_module_versions(local_salt_client, nodes_in_group):
 
     if len(total_nodes) < 2:
         pytest.skip("Nothing to compare - only 1 node")
-    list_of_pip_packages = local_salt_client.cmd(tgt="L@"+','.join(nodes_in_group),
-                                   fun='pip.freeze', expr_form='compound')
+    list_of_pip_packages = local_salt_client.cmd(
+        tgt="L@"+','.join(nodes),
+        fun='pip.freeze', expr_form='compound')
 
     nodes_with_packages = []
 
@@ -172,7 +180,8 @@ def test_check_module_versions(local_salt_client, nodes_in_group):
                 row.sort()
                 row.insert(0, deb)
                 modules_with_different_versions.append(row)
-    assert len(modules_with_different_versions) == 0, \
-        "Several problems found: {0}".format(
-        json.dumps(modules_with_different_versions, indent=4))
-
+    assert len(modules_with_different_versions) == 0, (
+        "Non-uniform pip modules are installed on '{}' group of nodes:\n"
+        "{}".format(
+            group, json.dumps(modules_with_different_versions, indent=4))
+    )

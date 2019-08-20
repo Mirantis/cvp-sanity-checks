@@ -35,9 +35,10 @@ def test_contrail_compute_status(local_salt_client, check_openstack):
                     node=node, service=name, status=status)
                 broken_services.append(err_msg)
 
-    assert not broken_services, 'Broken services: {}'.format(json.dumps(
-                                                             broken_services,
-                                                             indent=4))
+    assert not broken_services, (
+        'Some Contrail services are in wrong state on computes: {}'.format(
+            json.dumps(broken_services, indent=4))
+    )
 
 @pytest.mark.smoke
 def test_contrail_node_status(local_salt_client, check_openstack):
@@ -65,9 +66,10 @@ def test_contrail_node_status(local_salt_client, check_openstack):
                     node=node, service=name, status=status)
                 broken_services.append(err_msg)
 
-    assert not broken_services, 'Broken services: {}'.format(json.dumps(
-                                                             broken_services,
-                                                             indent=4))
+    assert not broken_services, (
+        'Some Contrail services are in wrong state on Contrail controllers: '
+        '{}'.format(json.dumps(broken_services, indent=4))
+    )
 
 @pytest.mark.smoke
 def test_contrail_vrouter_count(local_salt_client, check_openstack):

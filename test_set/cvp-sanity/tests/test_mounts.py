@@ -9,8 +9,9 @@ def test_mounted_file_systems(local_salt_client, nodes_in_group):
         # Get all mount points from each node in the group  with the next command: `df -h | awk '{print $1}'`
         # Check that all mount points are similar for each node in the group
     """
+    group, nodes = nodes_in_group
     exclude_mounts = 'grep -v "overlay\|tmpfs\|shm\|Filesystem"'
-    mounts_by_nodes = local_salt_client.cmd(tgt="L@"+','.join(nodes_in_group),
+    mounts_by_nodes = local_salt_client.cmd(tgt="L@"+','.join(nodes),
                                             param="df -h | awk '{print $1}'" +
                                                   " |" + exclude_mounts,
                                             expr_form='compound')
@@ -46,6 +47,7 @@ def test_mounted_file_systems(local_salt_client, nodes_in_group):
     if not result:
         pytest.skip("These nodes are skipped")
 
-    assert len(set(result.values())) == 1,\
-        "The nodes in the same group have different mounts:\n{}".format(
-            json.dumps(pretty_result, indent=4))
+    assert len(set(result.values())) == 1, (
+        "Nodes in '{}' group have different mounts:\n{}".format(
+            group, json.dumps(pretty_result, indent=4))
+    )
