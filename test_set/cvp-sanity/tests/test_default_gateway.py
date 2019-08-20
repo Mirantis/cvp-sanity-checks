@@ -4,8 +4,9 @@ import pytest
 
 @pytest.mark.full
 def test_check_default_gateways(local_salt_client, nodes_in_group):
+    group, nodes = nodes_in_group
     netstat_info = local_salt_client.cmd(
-        tgt="L@"+','.join(nodes_in_group),
+        tgt="L@"+','.join(nodes),
         param='ip r | sed -n 1p',
         expr_form='compound')
 
@@ -20,7 +21,7 @@ def test_check_default_gateways(local_salt_client, nodes_in_group):
         else:
             gateways[gateway].append(node)
 
-    assert len(gateways.keys()) == 1, \
-        "There were found few gateways: {gw}".format(
-        gw=json.dumps(gateways, indent=4)
+    assert len(gateways.keys()) == 1, (
+        "There is a problem with default gateway for '{}' group of nodes:\n"
+        "{}".format(group, json.dumps(gateways, indent=4))
     )

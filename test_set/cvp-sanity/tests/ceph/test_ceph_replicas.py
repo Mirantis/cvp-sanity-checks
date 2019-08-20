@@ -39,5 +39,8 @@ def test_ceph_replicas(local_salt_client):
             if replica == 'size' and value < 3:
                 error.append(pool + " " + replica + " " 
                 + str(value) + " must be 3")
-    
-    assert not error, "Wrong pool replicas found\n{}".format(error)
+
+    assert not error, (
+        "There are wrong pool replicas for the following pools:\n{}".format(
+            error)
+    )

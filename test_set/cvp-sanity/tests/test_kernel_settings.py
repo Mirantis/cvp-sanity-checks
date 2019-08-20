@@ -10,6 +10,7 @@ def test_sysctl_variables(local_salt_client, nodes_in_group):
     # Compare that value in sysctl equals to the same value in pillars
 
     """
+
     def normalize_value(value_in_string):
         """
         Changes to INT if value_in_string is parcible to int
@@ -29,8 +30,9 @@ def test_sysctl_variables(local_salt_client, nodes_in_group):
         return value_in_string
 
     issues = dict()
+    group, nodes = nodes_in_group
     expected_kernel_params_by_nodes = local_salt_client.cmd(
-        tgt="L@"+','.join(nodes_in_group),
+        tgt="L@"+','.join(nodes),
         fun='pillar.get',
         param="linux:system:kernel:sysctl",
         expr_form='compound'
@@ -65,6 +67,8 @@ def test_sysctl_variables(local_salt_client, nodes_in_group):
         if differences.__len__() > 0:
             issues[node] = differences
 
-    assert issues.__len__() == 0, json.dumps(issues, indent=4)
-
-
+    assert issues.__len__() == 0, (
+        "There are inconsistencies between kernel settings defined in pillars "
+        "and actual settings on nodes of '{}' group: {}".format(
+            group, json.dumps(issues, indent=4))
+    )

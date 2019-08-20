@@ -9,8 +9,10 @@ def test_uncommited_changes(local_salt_client):
         tgt='salt:master',
         param='cd /srv/salt/reclass/classes/cluster/; git status',
         expr_form='pillar', check_status=True)
-    assert 'nothing to commit' in git_status.values()[0], 'Git status showed' \
-           ' some unmerged changes {}'''.format(git_status.values()[0])
+    assert 'nothing to commit' in git_status.values()[0], (
+        "Git status shows some unmerged changes:\n{}".format(
+            git_status.values()[0])
+    )
 
 
 @pytest.mark.smoke
@@ -21,8 +23,7 @@ def test_reclass_smoke(local_salt_client):
         expr_form='pillar', check_status=True)
     result = reclass[reclass.keys()[0]][-1]
 
-    assert result == '0', 'Reclass is broken' \
-                          '\n {}'.format(reclass)
+    assert result == '0', 'Reclass is broken:\n{}'.format(reclass)
 
 
 @pytest.mark.smoke
@@ -43,5 +44,7 @@ def test_reclass_nodes(local_salt_client):
                                 ' reclass-salt --top output'
     reclass_nodes = sorted(json.loads(reclass_nodes.strip("}")).keys())
     salt_nodes = sorted([x for xs in json.loads(salt).values() for x in xs])
-    assert salt_nodes == reclass_nodes, 'Mismatch between registered salt nodes (left) ' \
-                                        'and defined reclass nodes (right)'
+    assert salt_nodes == reclass_nodes, (
+        "Mismatch between registered salt nodes (left) and node defined in "
+        "reclass (right)."
+    )

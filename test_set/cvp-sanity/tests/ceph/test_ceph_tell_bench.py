@@ -49,8 +49,8 @@ def test_ceph_tell_bench(local_salt_client):
         if math.fabs(mbps_avg - mbps) > 10:
             result[osd] = osd_pool[osd]
 
-    assert len(result) == 0, \
-    "Performance of {0} OSD(s) lower " \
-    "than AVG performance ({1} mbps), " \
-    "please check Ceph for possible problems".format(
-        json.dumps(result, indent=4), mbps_avg)
+    assert len(result) == 0, (
+        "Performance of {0} OSD(s) is lower than AVG performance ({1} mbps).\n"
+        "Please check Ceph for possible problems.".format(
+            json.dumps(result, indent=4), mbps_avg)
+    )

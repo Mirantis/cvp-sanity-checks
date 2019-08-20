@@ -26,8 +26,10 @@ def test_ntp_sync(local_salt_client):
             result[time].sort()
         else:
             result[time] = [node]
-    assert len(result) <= 1, 'Not all nodes have the same time:\n {}'.format(
-                             json.dumps(result, indent=4))
+    assert len(result) <= 1, (
+        'Time is out of sync on the following nodes:\n{}'.format(
+            json.dumps(result, indent=4))
+    )
 
 
 @pytest.mark.smoke
@@ -62,6 +64,7 @@ def test_ntp_peers_state(local_salt_client):
                 sys_peer_declared = True
         if not sys_peer_declared:
             final_result[node] = ntpq_output
-    assert not final_result,\
-        "NTP peers state is not expected on some nodes, could not find " \
+    assert not final_result, (
+        "NTP peers state is not as expected on some nodes; could not find "
         "declared system peer:\n{}".format(json.dumps(final_result, indent=4))
+    )

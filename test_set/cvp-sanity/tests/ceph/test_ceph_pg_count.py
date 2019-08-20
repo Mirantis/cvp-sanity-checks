@@ -86,9 +86,11 @@ def test_ceph_pg_count(local_salt_client):
         if pools_pg_num[pool] < correct_pg_num:
             wrong_pg_num_pools.append(pool)
 
-    assert not pg_pgp_not_equal_pools, \
-    "For pools {} PG and PGP are not equal " \
-    "but should be".format(pg_pgp_not_equal_pools)
-    assert not wrong_pg_num_pools, "For pools {} " \
-    "PG number lower than Correct PG number, " \
-    "but should be equal or higher".format(wrong_pg_num_pools)
+    assert not pg_pgp_not_equal_pools, (
+        "PG and PGP are not equal for the following pools:\n{}".format(
+            pg_pgp_not_equal_pools)
+    )
+    assert not wrong_pg_num_pools, (
+        "PG number is lower than Correct PG number (but should be equal or "
+        "higher) for the following pools:\n{}".format(wrong_pg_num_pools)
+    )

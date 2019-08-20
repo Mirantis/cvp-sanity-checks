@@ -32,5 +32,7 @@ def test_single_vip_exists(local_salt_client):
                 no_vip[group] = 'No vip found'
             else:
                 no_vip[group] = nodes_list
-    assert len(no_vip) < 1, "Some groups of nodes have problem with vip " \
-           "\n{}".format(json.dumps(no_vip, indent=4))
+    assert len(no_vip) < 1, (
+        "The following group(s) of nodes have problem with vip:\n{}".format(
+            json.dumps(no_vip, indent=4))
+    )

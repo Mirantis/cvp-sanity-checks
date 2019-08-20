@@ -10,8 +10,8 @@ def test_nova_services_status(local_salt_client):
         param='. /root/keystonercv3;'
               'nova service-list | grep "down\|disabled" | grep -v "Forced down"')
 
-    assert result == '', \
-        '''Some nova services are in wrong state'''
+    assert result == '', (
+        "Some Nova services are in wrong state:\n{}".format(result))
 
 
 @pytest.mark.smoke
@@ -34,9 +34,11 @@ def test_nova_hosts_consistent(local_salt_client):
         param='. /root/keystonercv3;'
               'openstack hypervisor list | egrep -v "\-----|ID" | wc -l')
 
-    assert all_cmp_services == hypervisors, \
-        "Number of nova-compute services ({}) does not match number of " \
+    assert all_cmp_services == hypervisors, (
+        "Number of nova-compute services ({}) does not match number of "
         "hypervisors ({}).".format(all_cmp_services, hypervisors)
-    assert enabled_cmp_services == hosts, \
-        "Number of enabled nova-compute services ({}) does not match number \
-        of hosts ({}).".format(enabled_cmp_services, hosts)
+    )
+    assert enabled_cmp_services == hosts, (
+        "Number of enabled nova-compute services ({}) does not match number "
+        "of hosts ({}).".format(enabled_cmp_services, hosts)
+    )

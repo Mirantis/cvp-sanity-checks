@@ -12,9 +12,10 @@ def test_mtu(local_salt_client, nodes_in_group):
     skipped_ifaces = config.get(testname)["skipped_ifaces"] or \
         ["bonding_masters", "lo", "veth", "tap", "cali", "qv", "qb", "br-int",
          "vxlan", "virbr0", "virbr0-nic", "docker0", "o-hm0"]
+    group, nodes = nodes_in_group
     total = {}
     network_info = local_salt_client.cmd(
-        tgt="L@"+','.join(nodes_in_group),
+        tgt="L@"+','.join(nodes),
         param='ls /sys/class/net/',
         expr_form='compound')
 
@@ -75,6 +76,7 @@ def test_mtu(local_salt_client, nodes_in_group):
             row.sort()
             row.insert(0, interf)
             mtu_data.append(row)
-    assert len(mtu_data) == 0, \
-        "Several problems found: {0}".format(
-        json.dumps(mtu_data, indent=4))
+    assert len(mtu_data) == 0, (
+        "Non-uniform MTUs are set on the same node interfaces of '{}' group "
+        "of nodes: {}".format(group, json.dumps(mtu_data, indent=4))
+    )

@@ -16,5 +16,5 @@ def test_minions_status(local_salt_client):
         pytest.fail(
             "Could not check the result: {}\n"
             "Nodes status result: {}".format(e, result))
-    assert not statuses["down"], "Some minions are down:\n {}".format(
+    assert not statuses["down"], "Some minions are down:\n{}".format(
         statuses["down"])

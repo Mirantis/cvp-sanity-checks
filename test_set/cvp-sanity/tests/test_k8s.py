@@ -22,9 +22,8 @@ def test_k8s_get_cs_status(local_salt_client):
                 if 'Healthy' not in line:
                     errors.append(line)
         break
-    assert not errors, 'k8s is not healthy: {}'.format(json.dumps(
-                                                       errors,
-                                                       indent=4))
+    assert not errors, 'k8s is not healthy:\n{}'.format(
+        json.dumps(errors, indent=4))
 
 
 @pytest.mark.xfail
@@ -46,9 +45,8 @@ def test_k8s_get_nodes_status(local_salt_client):
                 if 'Ready' != line.split()[1]:
                     errors.append(line)
         break
-    assert not errors, 'k8s is not healthy: {}'.format(json.dumps(
-                                                       errors,
-                                                       indent=4))
+    assert not errors, 'k8s is not healthy:\n{}'.format(
+        json.dumps(errors, indent=4))
 
 
 def test_k8s_get_calico_status(local_salt_client):
@@ -68,9 +66,8 @@ def test_k8s_get_calico_status(local_salt_client):
             else:
                 if 'up' not in line or 'Established' not in line:
                     errors.append(line)
-    assert not errors, 'Calico node status is not good: {}'.format(json.dumps(
-                                                                   errors,
-                                                                   indent=4))
+    assert not errors, 'Calico node status is not good:\n{}'.format(
+        json.dumps(errors, indent=4))
 
 
 def test_k8s_cluster_status(local_salt_client):
@@ -90,9 +87,8 @@ def test_k8s_cluster_status(local_salt_client):
                 if 'is running' not in line:
                     errors.append(line)
         break
-    assert not errors, 'k8s cluster info is not good: {}'.format(json.dumps(
-                                                                 errors,
-                                                                 indent=4))
+    assert not errors, 'k8s cluster info is not good:\n{}'.format(
+        json.dumps(errors, indent=4))
 
 
 def test_k8s_kubelet_status(local_salt_client):
@@ -108,8 +104,8 @@ def test_k8s_kubelet_status(local_salt_client):
     for node in result:
         if not result[node]:
             errors.append(node)
-    assert not errors, 'Kublete is not running on these nodes: {}'.format(
-                       errors)
+    assert not errors, 'Kublete is not running on the nodes:\n{}'.format(
+        errors)
 
 
 def test_k8s_check_system_pods_status(local_salt_client):
@@ -130,9 +126,8 @@ def test_k8s_check_system_pods_status(local_salt_client):
                 if 'Running' not in line:
                     errors.append(line)
         break
-    assert not errors, 'Some system pods are not running: {}'.format(json.dumps(
-                                                                   errors,
-                                                                   indent=4))
+    assert not errors, 'Some system pods are not running:\n{}'.format(
+        json.dumps(errors, indent=4))
 
 
 def test_check_k8s_image_availability(local_salt_client):
@@ -173,8 +168,10 @@ def test_k8s_dashboard_available(local_salt_client):
         tgt='etcd:server',
         param='kubernetes:common:addons:dashboard:public_ip')
 
-    assert external_ip, "Kubernetes dashboard public ip is not found in pillars"
-    assert external_ip.__len__() > 0, "Kubernetes dashboard is enabled but not defined in pillars"
+    assert external_ip, (
+        "Kubernetes dashboard public ip is not found in pillars")
+    assert external_ip.__len__() > 0, (
+        "Kubernetes dashboard is enabled but not defined in pillars")
     # dashboard port 8443 is hardcoded in kubernetes formula
     url = "https://{}:8443".format(external_ip)
     check = local_salt_client.cmd(
@@ -182,6 +179,7 @@ def test_k8s_dashboard_available(local_salt_client):
         param='curl {} 2>&1 | grep kubernetesDashboard'.format(url),
         expr_form='pillar'
     )
-    assert len(check.values()[0]) != 0, \
-        'Kubernetes dashboard is not reachable on {} ' \
-        'from ctl nodes'.format(url)
+    assert len(check.values()[0]) != 0, (
+        'Kubernetes dashboard is not reachable on {} from '
+        'ctl nodes'.format(url)
+    )

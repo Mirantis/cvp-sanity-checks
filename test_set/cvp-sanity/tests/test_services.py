@@ -17,7 +17,8 @@ def test_check_services(local_salt_client, nodes_in_group):
     Inconsistent services will be checked with another test case
     """
     exclude_services = utils.get_configuration().get("skipped_services", [])
-    services_by_nodes = local_salt_client.cmd(tgt="L@"+','.join(nodes_in_group),
+    group, nodes = nodes_in_group
+    services_by_nodes = local_salt_client.cmd(tgt="L@"+','.join(nodes),
                                               fun='service.get_all',
                                               expr_form='compound')
 
@@ -30,8 +31,8 @@ def test_check_services(local_salt_client, nodes_in_group):
     cluster_domain = local_salt_client.pillar_get(
         param='_param:cluster_domain') or '.local'
     gtw01 += '.' + cluster_domain
-    if gtw01 in nodes_in_group:
-        octavia = local_salt_client.cmd(tgt="L@" + ','.join(nodes_in_group),
+    if gtw01 in nodes:
+        octavia = local_salt_client.cmd(tgt="L@" + ','.join(nodes),
                                         fun='pillar.get',
                                         param='octavia:manager:enabled',
                                         expr_form='compound')
@@ -47,7 +48,7 @@ def test_check_services(local_salt_client, nodes_in_group):
     for node in services_by_nodes:
         if not services_by_nodes[node]:
             # TODO: do not skip node
-            logging.info("Node {} is skipped".format (node))
+            logging.info("Node {} is skipped".format(node))
             continue
         nodes.append(node)
         all_services.update(services_by_nodes[node])
@@ -72,9 +73,10 @@ def test_check_services(local_salt_client, nodes_in_group):
             report.sort()
             report.insert(0, srv)
             pkts_data.append(report)
-    assert len(pkts_data) == 0, \
-        "Several problems found: {0}".format(
-        json.dumps(pkts_data, indent=4))
+    assert len(pkts_data) == 0, (
+        "Non-uniform services are running on '{}' group of nodes:\n{}".format(
+            group, json.dumps(pkts_data, indent=4))
+    )
 
 
 # TODO : remake this test to make workable https://mirantis.jira.com/browse/PROD-25958

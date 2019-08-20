@@ -39,6 +39,7 @@ def test_oss_status(local_salt_client, check_cicd):
                 if row['svname'] != 'FRONTEND' and row['status'] != 'UP':
                         wrong_data.append(info)
 
-    assert len(wrong_data) == 0, \
-        '''Some haproxy services are in wrong state
-              {}'''.format(json.dumps(wrong_data, indent=4))
+    assert len(wrong_data) == 0, (
+        "Some haproxy services are in wrong state:\n{}".format(
+            json.dumps(wrong_data, indent=4))
+    )

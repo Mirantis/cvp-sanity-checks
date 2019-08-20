@@ -6,8 +6,8 @@ import logging
 @pytest.mark.full
 def test_list_of_repo_on_nodes(local_salt_client, nodes_in_group):
     # TODO: pillar.get
-    info_salt = local_salt_client.cmd(tgt='L@' + ','.join(
-                                              nodes_in_group),
+    group, nodes = nodes_in_group
+    info_salt = local_salt_client.cmd(tgt='L@' + ','.join(nodes),
                                       fun='pillar.get',
                                       param='linux:system:repo',
                                       expr_form='compound')
@@ -26,8 +26,7 @@ def test_list_of_repo_on_nodes(local_salt_client, nodes_in_group):
                     repos.pop(repo)
 
     raw_actual_info = local_salt_client.cmd(
-        tgt='L@' + ','.join(
-            nodes_in_group),
+        tgt='L@' + ','.join(nodes),
         param='cat /etc/apt/sources.list.d/*;'
               'cat /etc/apt/sources.list|grep deb|grep -v "#"',
         expr_form='compound', check_status=True)
@@ -57,8 +56,9 @@ def test_list_of_repo_on_nodes(local_salt_client, nodes_in_group):
             rows.append("{}: {}".format("config", "+"))
             rows.append("{}: No repo".format('pillars'))
             diff[repo] = rows
-    assert fail_counter == 0, \
-        "Several problems found: {0}".format(
-            json.dumps(diff, indent=4))
+    assert fail_counter == 0, (
+        "Non-uniform repos are on '{}' group of nodes:\n{}".format(
+            group, json.dumps(diff, indent=4))
+    )
     if fail_counter == 0 and len(diff) > 0:
         logging.warning("\nWarning: nodes contain more repos than reclass")
