@@ -240,6 +240,27 @@ class OSCliActions(object):
             net = self.create_network_resources()
         return net
 
+    def create_fake_external_network(self):
+        net_name = "spt-ext-net-{}".format(random.randrange(100, 999))
+        net_body = {"network": {"name": net_name,
+                                "router:external": True,
+                                "provider:network_type": "local"}}
+
+        ext_net = self.os_clients.network.create_network(net_body)['network']
+        subnet_name = "spt-ext-subnet-{}".format(random.randrange(100, 999))
+        subnet_body = {
+            "subnet": {
+                "name": subnet_name,
+                "network_id": ext_net["id"],
+                "ip_version": 4,
+                "cidr": "10.255.255.0/24",
+                "allocation_pools": [{"start": "10.255.255.100",
+                                      "end": "10.255.255.200"}]
+            }
+        }
+        self.os_clients.network.create_subnet(subnet_body)
+        return ext_net
+
     def get_external_network(self):
         config = utils.get_configuration()
         ext_net = config.get('external_network') or ''
