@@ -1,15 +1,23 @@
-#!/usr/bin/env python
-import itertools
-import re
-import os
-import yaml
-import requests
-import utils
-from utils import helpers
 from netaddr import IPNetwork, IPAddress
 
+import pytest
 
-def test_hw2hw (local_salt_client,hw_pair,record_property):
+import utils
+from utils import helpers
+
+
+def network_precheck(local_salt_client, hw_pair, net):
+    network_present = False
+    check = local_salt_client.cmd(expr_form='compound',
+                                  tgt=str(hw_pair[0]+' or '+hw_pair[1]),
+                                  fun='network.in_subnet',
+                                  param=['{}'.format(net)])
+    if all(check.values()): # if all are True
+        network_present = True
+    return network_present
+
+
+def test_hw2hw (local_salt_client, hw_pair, record_property):
     helpp = helpers.helpers(local_salt_client)
     config = utils.get_configuration()
     nodes = local_salt_client.cmd(expr_form='compound', tgt=str(hw_pair[0]+' or '+hw_pair[1]),
@@ -18,6 +26,14 @@ def test_hw2hw (local_salt_client,hw_pair,record_property):
     short_name.append(hw_pair[0].split('.')[0])
     short_name.append(hw_pair[1].split('.')[0])
     nets = config.get('networks').split(',')
+
+    for net in nets:
+        precheck = network_precheck(local_salt_client, hw_pair, net)
+        if not precheck:
+            pytest.fail("The network {} is not present at the pair {} on one "
+                        "or both nodes. Please recheck and fix 'networks' "
+                        "parameter in the test config.".format(net, hw_pair))
+
     local_salt_client.cmd(expr_form='compound', tgt=str(hw_pair[0]+' or '+hw_pair[1]),
                           fun='cmd.run', param=['nohup iperf -s > file 2>&1 &'])
     global_results = []
