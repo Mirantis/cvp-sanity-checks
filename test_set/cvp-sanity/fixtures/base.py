@@ -59,6 +59,14 @@ def check_openstack(local_salt_client):
 
 
 @pytest.fixture(scope='session')
+def check_ironic(local_salt_client):
+    salt_output = local_salt_client.test_ping(tgt='ironic:client')
+    if not salt_output:
+        pytest.skip("Ironic service is not found or ironic:client pillar is "
+                    "not found on this environment.")
+
+
+@pytest.fixture(scope='session')
 def check_drivetrain(local_salt_client):
     salt_output = local_salt_client.test_ping(tgt='I@jenkins:client and not I@salt:master',
                                               expr_form='compound')
