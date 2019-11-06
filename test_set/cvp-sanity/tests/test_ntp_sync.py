@@ -32,6 +32,7 @@ def test_ntp_sync(local_salt_client):
     )
 
 
+@pytest.mark.flaky(reruns=5, reruns_delay=60)
 @pytest.mark.smoke
 def test_ntp_peers_state(local_salt_client):
     """Test gets ntpq peers state and checks the system peer is declared"""
