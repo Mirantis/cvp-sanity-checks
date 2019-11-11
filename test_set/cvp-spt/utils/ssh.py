@@ -136,5 +136,23 @@ class prepare_iperf(object):
         config = utils.get_configuration()
         preparation_cmd = config.get('iperf_prep_string') or ['']
         transport.exec_command(preparation_cmd)
-        transport.exec_command('sudo apt-get update; sudo apt-get install -y iperf')
-        transport.exec_command('nohup iperf -s > file 2>&1 &') 
+
+        # Install iperf using apt or downloaded deb package
+        internet_at_vms = utils.get_configuration().get("internet_at_vms")
+        if internet_at_vms.lower() == 'false':
+            logger.debug("Using downloaded iperf package")
+            transport.put_file("/var/lib/iperf_2.0.5+dfsg1-2_amd64.deb",
+                               "/home/ubuntu/iperf_2.0.5+dfsg1-2_amd64.deb")
+            transport.exec_command(
+                'sudo dpkg -i /home/ubuntu/iperf_2.0.5+dfsg1-2_amd64.deb')
+        else:
+            logger.debug("Installing iperf using apt")
+            transport.exec_command(
+                'sudo apt-get update; sudo apt-get install -y iperf')
+
+        # Log whether iperf is installed with version
+        check = transport.exec_command('dpkg -l | grep iperf')
+        logger.debug(check)
+
+        # Staring iperf server
+        transport.exec_command('nohup iperf -s > file 2>&1 &')
