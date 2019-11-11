@@ -61,7 +61,10 @@ RUN set -ex; pushd /etc/apt/ && echo > sources.list && \
 # Cleanup
     && apt-get -y purge libx11-data xauth libxmuu1 libxcb1 libx11-6 libxext6 ppp pppconfig pppoeconf popularity-contest cpp gcc g++ libssl-doc && \
     apt-get -y autoremove; apt-get -y clean ; rm -rf /root/.cache; rm -rf /var/lib/apt/lists/* && \
-    rm -rf /tmp/* ; rm -rf /var/tmp/* ; rm -rfv /etc/apt/sources.list.d/* ; echo > /etc/apt/sources.list
+    rm -rf /tmp/* ; rm -rf /var/tmp/* ; rm -rfv /etc/apt/sources.list.d/* ; echo > /etc/apt/sources.list \
+
+# Download iperf package
+    && wget http://ftp.br.debian.org/debian/pool/main/i/iperf/iperf_2.0.5+dfsg1-2_amd64.deb -O /var/lib/iperf_2.0.5+dfsg1-2_amd64.deb
 
 ENTRYPOINT ["entrypoint.sh"]
 # docker build --no-cache -t cvp-sanity-checks:test_latest .
