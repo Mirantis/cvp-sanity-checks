@@ -93,7 +93,7 @@ def test_check_package_versions(local_salt_client, nodes_in_group):
 def test_packages_are_latest(local_salt_client, nodes_in_group):
     config = utils.get_configuration()
     skip = config.get("test_packages")["skip_test"]
-    if skip:
+    if skip.lower() == 'true':
         pytest.skip("Test for the latest packages is disabled")
     skipped_pkg = config.get("test_packages")["skipped_packages"]
     group, nodes = nodes_in_group

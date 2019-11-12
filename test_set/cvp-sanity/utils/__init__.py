@@ -5,7 +5,6 @@ import re
 import sys, traceback
 import time
 import json
-import pytest
 import logging
 
 
@@ -198,6 +197,7 @@ def get_configuration():
         os.path.dirname(os.path.abspath(__file__)), "../global_config.yaml")
     with open(global_config_file, 'r') as file:
         global_config = yaml.load(file, Loader=yaml.SafeLoader)
+
     for param in global_config.keys():
         if param in os.environ.keys():
             if ',' in os.environ[param]:
@@ -206,5 +206,20 @@ def get_configuration():
                     global_config[param].append(item)
             else:
                 global_config[param] = os.environ[param]
+
+    if 'OVERRIDE_CONFIG' in os.environ.keys():
+        try:
+            override_config = yaml.load(
+                os.environ['OVERRIDE_CONFIG'], Loader=yaml.SafeLoader)\
+                .get('override_config')
+            if override_config:
+                for key in override_config:
+                    if isinstance(global_config[key], dict):
+                        for k in override_config[key]:
+                            global_config[key][k] = override_config[key][k]
+                    else:
+                        global_config[key] = override_config[key]
+        except Exception:
+            pass
 
     return global_config
