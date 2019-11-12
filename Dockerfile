@@ -27,16 +27,16 @@ RUN set -ex; pushd /etc/apt/ && echo > sources.list && \
     echo "deb [arch=amd64] $UBUNTU_MIRROR_URL xenial-updates main restricted universe multiverse" >> sources.list && \
     echo "deb [arch=amd64] $UBUNTU_MIRROR_URL xenial-backports main restricted universe multiverse" >> sources.list && \
     popd ; apt-get update && apt-get  upgrade -y && \
-    apt-get install -y build-essential curl git-core iputils-ping libffi-dev libldap2-dev libsasl2-dev libssl-dev patch python-dev python-pip  vim-tiny wget \
+    apt-get install -y build-essential curl git-core iputils-ping libffi-dev libldap2-dev libsasl2-dev libssl-dev patch python-dev python-pip python3-dev python3-pip  vim-tiny wget \
     python-virtualenv \
 # Enable these packages while porting to Python3  =>  python3-virtualenv python3-dev  \
 # Due to upstream bug we should use fixed version of pip
-    && python -m pip install --upgrade 'pip==9.0.3'  \
+    && python -m pip install --upgrade 'pip==19.3.1'  \
     # initialize cvp sanity test suite
           && pushd cvp-sanity  \
-          && virtualenv --python=python2  venv \
+          && virtualenv --python=python3  venv \
           && . venv/bin/activate \
-          && pip install -r requirements.txt \
+          && pip3 install -r requirements.txt \
           && deactivate \
           && popd \
     # initialize cvp spt test suite

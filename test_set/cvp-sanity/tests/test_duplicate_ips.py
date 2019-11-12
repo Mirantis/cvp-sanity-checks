@@ -45,7 +45,7 @@ def test_duplicate_ips(local_salt_client):
     no_dups = (len(ipv4_list) == len(set(ipv4_list)))
     if not no_dups:
         ips_count = Counter(ipv4_list).most_common()
-        dup_ips = filter(lambda x: x[1] > 1, ips_count)
+        dup_ips = [x for x in ips_count if x[1] > 1]
         dup_ifaces = get_duplicate_ifaces(nodes, [v[0] for v in dup_ips])
 
         msg = ("\nDuplicate IP addresses found:\n{}"

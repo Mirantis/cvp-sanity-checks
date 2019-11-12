@@ -179,7 +179,7 @@ def test_k8s_dashboard_available(local_salt_client):
         param='curl {} 2>&1 | grep kubernetesDashboard'.format(url),
         expr_form='pillar'
     )
-    assert len(check.values()[0]) != 0, (
+    assert len(list(check.values())[0]) != 0, (
         'Kubernetes dashboard is not reachable on {} from '
         'ctl nodes'.format(url)
     )

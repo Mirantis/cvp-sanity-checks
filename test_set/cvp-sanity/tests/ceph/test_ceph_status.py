@@ -9,8 +9,8 @@ def test_ceph_osd(local_salt_client):
         expr_form='pillar')
     if not osd_fail:
         pytest.skip("Ceph is not found on this environment")
-    assert not osd_fail.values()[0], (
-        "Some OSDs are in down state:\n{}".format(osd_fail.values()[0]))
+    assert not list(osd_fail.values())[0], (
+        "Some OSDs are in down state:\n{}".format(list(osd_fail.values())[0]))
 
 
 def test_ceph_health(local_salt_client):
@@ -20,14 +20,14 @@ def test_ceph_health(local_salt_client):
         expr_form='pillar')
     if not get_status:
         pytest.skip("Ceph is not found on this environment")
-    status = json.loads(get_status.values()[0])["health"]
+    status = json.loads(list(get_status.values())[0])["health"]
     health = status["status"] if 'status' in status \
         else status["overall_status"]
 
     # Health structure depends on Ceph version, so condition is needed:
     if 'checks' in status:
         summary = "Summary: {}".format(
-            [i["summary"]["message"] for i in status["checks"].values()])
+            [i["summary"]["message"] for i in list(status["checks"].values())])
     else:
         summary = status["summary"]
 

@@ -11,7 +11,7 @@ def test_minions_status(local_salt_client):
         expr_form='pillar', check_status=True)
     statuses = {}
     try:
-        statuses = json.loads(result.values()[0])
+        statuses = json.loads(list(result.values())[0])
     except Exception as e:
         pytest.fail(
             "Could not check the result: {}\n"

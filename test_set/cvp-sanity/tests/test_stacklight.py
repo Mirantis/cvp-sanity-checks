@@ -27,10 +27,10 @@ def test_elasticsearch_cluster(local_salt_client):
     response = requests.get(
         '{0}://{1}:9200/_cat/health'.format(proto, IP),
         proxies=proxies,
-        verify=False).content
+        verify=False).content.decode()
     msg = "elasticsearch is not healthy:\n{}".format(
         json.dumps(response, indent=4))
-    assert response.split()[3] == 'green',msg
+    assert response.split()[3] == 'green', msg
     assert response.split()[4] == '3', msg
     assert response.split()[5] == '3', msg
     assert response.split()[10] == '0', msg
@@ -52,7 +52,7 @@ def test_kibana_status(local_salt_client):
     response = requests.get(
         '{0}://{1}:5601/api/status'.format(proto, IP),
         proxies=proxies,
-        verify=False).content
+        verify=False).content.decode()
     body = json.loads(response)
     assert body['status']['overall']['state'] == "green", (
         "Kibana overall status is not 'green':\n{}".format(
@@ -102,7 +102,7 @@ def test_elasticsearch_node_count(local_salt_client):
         node_name = item_['key']
         monitored_nodes.append(node_name + '.' + cluster_domain)
     missing_nodes = []
-    all_nodes = local_salt_client.test_ping(tgt='*').keys()
+    all_nodes = list(local_salt_client.test_ping(tgt='*').keys())
     for node in all_nodes:
         if node not in monitored_nodes:
             missing_nodes.append(node)
@@ -129,7 +129,7 @@ def test_stacklight_services_replicas(local_salt_client):
         prometheus:server pillars are not found on this environment.")
 
     wrong_items = []
-    for line in salt_output[salt_output.keys()[0]].split('\n'):
+    for line in salt_output[list(salt_output.keys())[0]].split('\n'):
         if line[line.find('/') - 1] != line[line.find('/') + 1] \
            and 'replicated' in line:
             wrong_items.append(line)
@@ -172,7 +172,7 @@ def test_prometheus_alert_count(local_salt_client, ctl_nodes_pillar):
         'Issues with accessing prometheus alerts on {}:\n{}'.format(
             IP, response.text)
     )
-    alerts = json.loads(response.content)
+    alerts = json.loads(response.content.decode())
     short_alerts = ''
     for i in alerts['data']['alerts']:
         short_alerts = '{}* {}\n'.format(short_alerts, i['annotations']['description'])
@@ -197,19 +197,19 @@ def test_stacklight_containers_status(local_salt_client):
     # for old reclass models, docker:swarm:role:master can return
     # 2 nodes instead of one. Here is temporary fix.
     # TODO
-    if len(salt_output.keys()) > 1:
-        if 'CURRENT STATE' not in salt_output[salt_output.keys()[0]]:
-            del salt_output[salt_output.keys()[0]]
-    for line in salt_output[salt_output.keys()[0]].split('\n')[1:]:
+    if len(list(salt_output.keys())) > 1:
+        if 'CURRENT STATE' not in salt_output[list(salt_output.keys())[0]]:
+            del salt_output[list(salt_output.keys())[0]]
+    for line in salt_output[list(salt_output.keys())[0]].split('\n')[1:]:
         shift = 0
         if line.split()[1] == '\\_':
             shift = 1
-        if line.split()[1 + shift] not in result.keys():
+        if line.split()[1 + shift] not in list(result.keys()):
             result[line.split()[1]] = 'NOT OK'
         if line.split()[4 + shift] == 'Running' \
            or line.split()[4 + shift] == 'Ready':
             result[line.split()[1 + shift]] = 'OK'
-    assert 'NOT OK' not in result.values(), (
+    assert 'NOT OK' not in list(result.values()), (
         "Some containers have incorrect state:\n{}".format(
             json.dumps(result, indent=4))
     )
@@ -229,7 +229,7 @@ def test_running_telegraf_services(local_salt_client):
                     "this environment.")
 
     result = [{node: status} for node, status
-              in salt_output.items()
+              in list(salt_output.items())
               if status is False]
     assert result == [], (
         "Telegraf service is not running on the following nodes:\n{}".format(
@@ -246,7 +246,7 @@ def test_running_fluentd_services(local_salt_client):
                                         param='td-agent',
                                         expr_form='pillar')
     result = [{node: status} for node, status
-              in salt_output.items()
+              in list(salt_output.items())
               if status is False]
     assert result == [], (
         "Fluentd check failed - td-agent service is not running on the "

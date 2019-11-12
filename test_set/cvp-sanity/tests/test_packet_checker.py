@@ -5,7 +5,7 @@ import logging
 
 def is_deb_in_exception(inconsistency_rule, package_name, error_node_list):
     short_names_in_error_nodes = [n.split('.')[0] for n in error_node_list]
-    for node, excluded_packages in inconsistency_rule.iteritems():
+    for node, excluded_packages in inconsistency_rule.items():
         if package_name in excluded_packages and node in short_names_in_error_nodes:
             return True
     return False
@@ -31,8 +31,8 @@ def test_check_package_versions(local_salt_client, nodes_in_group):
                                               fun='lowpkg.list_pkgs',
                                               expr_form='compound')
     # Let's exclude cid01 and dbs01 nodes from this check
-    exclude_nodes = local_salt_client.test_ping(tgt="I@galera:master or I@gerrit:client",
-                                                expr_form='compound').keys()
+    exclude_nodes = list(local_salt_client.test_ping(tgt="I@galera:master or I@gerrit:client",
+                                                expr_form='compound').keys())
     # PROD-30833
     gtw01 = local_salt_client.pillar_get(
         param='_param:openstack_gateway_node01_hostname') or 'gtw01'
@@ -44,7 +44,7 @@ def test_check_package_versions(local_salt_client, nodes_in_group):
                                         fun='pillar.get',
                                         param='octavia:manager:enabled',
                                         expr_form='compound')
-        gtws = [gtw for gtw in octavia.values() if gtw]
+        gtws = [gtw for gtw in list(octavia.values()) if gtw]
         if len(gtws) == 1:
             exclude_nodes.append(gtw01)
             logging.info("gtw01 node is skipped in test_check_package_versions")
@@ -62,7 +62,7 @@ def test_check_package_versions(local_salt_client, nodes_in_group):
             logging.warning("Node {} is skipped".format(node))
             continue
         nodes_with_packages.append(node)
-        packages_names.update(packages_versions[node].keys())
+        packages_names.update(list(packages_versions[node].keys()))
     for deb in packages_names:
         if deb in exclude_packages:
             continue
@@ -71,7 +71,7 @@ def test_check_package_versions(local_salt_client, nodes_in_group):
         for node in nodes_with_packages:
             if not packages_versions[node]:
                 continue
-            if deb in packages_versions[node].keys():
+            if deb in list(packages_versions[node].keys()):
                 diff.append(packages_versions[node][deb])
                 row.append("{}: {}".format(node, packages_versions[node][deb]))
             else:
@@ -124,11 +124,11 @@ def test_check_module_versions(local_salt_client, nodes_in_group):
         tgt="L@"+','.join(nodes),
         param='dpkg -l | grep "python-pip "',
         expr_form='compound')
-    if pre_check.values().count('') > 0:
+    if list(pre_check.values()).count('') > 0:
         pytest.skip("pip is not installed on one or more nodes")
 
-    exclude_nodes = local_salt_client.test_ping(tgt="I@galera:master or I@gerrit:client",
-                                                expr_form='compound').keys()
+    exclude_nodes = list(local_salt_client.test_ping(tgt="I@galera:master or I@gerrit:client",
+                                                expr_form='compound').keys())
 
     # PROD-30833
     gtw01 = local_salt_client.pillar_get(
@@ -141,12 +141,12 @@ def test_check_module_versions(local_salt_client, nodes_in_group):
                                         fun='pillar.get',
                                         param='octavia:manager:enabled',
                                         expr_form='compound')
-        gtws = [gtw for gtw in octavia.values() if gtw]
+        gtws = [gtw for gtw in list(octavia.values()) if gtw]
         if len(gtws) == 1:
             exclude_nodes.append(gtw01)
             logging.info("gtw01 node is skipped in test_check_module_versions")
 
-    total_nodes = [i for i in pre_check.keys() if i not in exclude_nodes]
+    total_nodes = [i for i in list(pre_check.keys()) if i not in exclude_nodes]
 
     if len(total_nodes) < 2:
         pytest.skip("Nothing to compare - only 1 node")
@@ -170,7 +170,7 @@ def test_check_module_versions(local_salt_client, nodes_in_group):
         diff = []
         row = []
         for node in nodes_with_packages:
-            if deb in list_of_pip_packages[node].keys():
+            if deb in list(list_of_pip_packages[node].keys()):
                 diff.append(list_of_pip_packages[node][deb])
                 row.append("{}: {}".format(node, list_of_pip_packages[node][deb]))
             else:

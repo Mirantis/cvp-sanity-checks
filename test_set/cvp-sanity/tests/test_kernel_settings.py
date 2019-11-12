@@ -42,11 +42,11 @@ def test_sysctl_variables(local_salt_client, nodes_in_group):
     # To get only specified values from system need to request them in the nex format
     # 'sysctl param1 param2 param3 param4'
 
-    for node in expected_kernel_params_by_nodes.keys():
+    for node in list(expected_kernel_params_by_nodes.keys()):
         actual_kernel_params_for_node = local_salt_client.cmd(
             tgt=node,
             fun='cmd.run',
-            param="sysctl {}".format(" ".join(expected_kernel_params_by_nodes[node].keys())),
+            param="sysctl {}".format(" ".join(list(expected_kernel_params_by_nodes[node].keys()))),
             expr_form='compound'
         )
         # make transfer string to dict format
@@ -62,7 +62,7 @@ def test_sysctl_variables(local_salt_client, nodes_in_group):
                   for param in actual_kernel_params_for_node[node].split('\n')}
 
         differences = [ "Parameter '{}' is not set === Expected '{}' === Got in sysctl '{}'".format(key, expected_kernel_params_by_nodes[node].get(key), actual)
-                        for key, actual in values.items()
+                        for key, actual in list(values.items())
                         if  expected_kernel_params_by_nodes[node].get(key) != actual ]
         if differences.__len__() > 0:
             issues[node] = differences

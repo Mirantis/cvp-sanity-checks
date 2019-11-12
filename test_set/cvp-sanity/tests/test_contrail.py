@@ -87,10 +87,10 @@ def test_contrail_vrouter_count(local_salt_client, check_openstack):
             if 'contrail-vrouter-nodemgr' in line:
                 actual_vrouter_count += 1
 
-    assert actual_vrouter_count == len(cs.keys()),\
+    assert actual_vrouter_count == len(list(cs.keys())),\
         'The length of vRouters {} differs' \
         ' from the length of compute nodes {}'.format(actual_vrouter_count,
-                                                      len(cs.keys()))
+                                                      len(list(cs.keys())))
 
 @pytest.mark.smoke
 def test_public_ui_contrail(local_salt_client, ctl_nodes_pillar, check_openstack):

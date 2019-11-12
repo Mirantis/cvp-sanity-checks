@@ -1,3 +1,5 @@
+from __future__ import print_function
+from builtins import str
 import os
 import pytest
 import atexit
@@ -29,7 +31,7 @@ def local_salt_client():
 nodes = utils.calculate_groups()
 
 
-@pytest.fixture(scope='session', params=nodes.items(), ids=nodes.keys())
+@pytest.fixture(scope='session', params=list(nodes.items()), ids=list(nodes.keys()))
 def nodes_in_group(request):
     return request.param
 
@@ -142,7 +144,7 @@ def check_kdt(local_salt_client):
     )
     if not kdt_nodes_available:
         pytest.skip("No 'kdt' nodes found. Skipping this test...")
-    return kdt_nodes_available.keys()
+    return list(kdt_nodes_available.keys())
 
 
 @pytest.fixture(scope='session')
@@ -153,7 +155,7 @@ def check_kfg(local_salt_client):
     )
     if not kfg_nodes_available:
         pytest.skip("No cfg-under-Kubernetes nodes found. Skipping this test...")
-    return kfg_nodes_available.keys()
+    return list(kfg_nodes_available.keys())
 
 
 @pytest.fixture(scope='session')
@@ -191,8 +193,8 @@ def print_node_version(local_salt_client):
             expr_form='compound')
         if list_version.__len__() == 0:
             yield
-        parsed = {k: v.split('\n') for k, v in list_version.items()}
-        columns = [name.split('=')[0] for name in parsed.values()[0]]
+        parsed = {k: v.split('\n') for k, v in list(list_version.items())}
+        columns = [name.split('=')[0] for name in list(parsed.values())[0]]
 
         template = "{:<40} | {:<25} | {:<25} | {:<25}\n"
 

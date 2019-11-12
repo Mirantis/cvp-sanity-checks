@@ -14,7 +14,7 @@ def test_ceph_haproxy(local_salt_client):
     if not monitor_info:
         pytest.skip("Ceph is not found on this environment")
 
-    for name, info in monitor_info.iteritems():
+    for name, info in monitor_info.items():
         if "OPEN" and "UP" in info:
             continue
         else:

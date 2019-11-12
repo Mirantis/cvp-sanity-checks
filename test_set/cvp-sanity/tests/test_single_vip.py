@@ -26,7 +26,7 @@ def test_single_vip_exists(local_salt_client):
             fun='cmd.run',
             param='ip a | grep /32 ' + exclude_from_grep,
             expr_form='compound')
-        result = [x for x in nodes_list.values() if x]
+        result = [x for x in list(nodes_list.values()) if x]
         if len(result) != 1:
             if len(result) == 0:
                 no_vip[group] = 'No vip found'

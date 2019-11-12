@@ -15,7 +15,7 @@ def test_ntp_sync(local_salt_client):
         param='date +%s',
         expr_form='compound')
     result = {}
-    for node, time in nodes_time.iteritems():
+    for node, time in nodes_time.items():
         if isinstance(nodes_time[node], bool):
             time = 'Cannot access node(-s)'
         if node in config.get("ntp_skipped_nodes"):

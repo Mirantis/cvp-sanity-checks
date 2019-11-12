@@ -38,7 +38,7 @@ def test_checking_rabbitmq_cluster(local_salt_client):
         running_nodes_count = 0
         # rabbitmqctl cluster_status output contains
         # 3 * # of nodes 'rabbit@' entries + 1
-        running_nodes_count = (rabbit_actual_data[node].count('rabbit@') - 1)/3
+        running_nodes_count = (rabbit_actual_data[node].count('rabbit@') - 1)//3
         # update control dictionary with values
         # {node:actual_cluster_size_for_node}
         if required_cluster_size_dict[node] != running_nodes_count:
@@ -48,5 +48,5 @@ def test_checking_rabbitmq_cluster(local_salt_client):
         "RabbitMQ cluster is probably "
         "broken - the cluster size for each node should be ({}),\nbut the "
         "following nodes have other values:\n{}".format(
-            len(required_cluster_size_dict.keys()), control_dict)
+            len(list(required_cluster_size_dict.keys())), control_dict)
     )
