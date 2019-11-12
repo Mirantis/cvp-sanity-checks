@@ -9,11 +9,11 @@ def test_etc_hosts(local_salt_client):
         param='cat /etc/hosts',
         expr_form='compound')
     result = {}
-    for node in nodes_info.keys():
+    for node in list(nodes_info.keys()):
         if isinstance(nodes_info[node], bool):
             result[node] = 'Cannot access this node'
             continue
-        for nd in nodes_info.keys():
+        for nd in list(nodes_info.keys()):
             if nd not in nodes_info[node]:
                 if node in result:
                     result[node] += ',' + nd

@@ -1,3 +1,5 @@
+from builtins import range
+from builtins import object
 import os
 import yaml
 import requests
@@ -12,7 +14,7 @@ class AuthenticationError(Exception):
     pass
 
 
-class salt_remote:
+class salt_remote(object):
     def __init__(self):
         self.config = get_configuration()
         self.skipped_nodes = self.config.get('skipped_nodes') or []
@@ -42,7 +44,7 @@ class salt_remote:
                             "was not established.\n"
                             "Please make sure that you "
                             "provided correct credentials.\n"
-                            "Error message: {}\033[0m\n".format(e.message or e))
+                            "Error message: {}\033[0m\n".format(e))
             traceback.print_exc(file=sys.stdout)
             sys.exit()
         self.expire = login_request.json()['return'][0]['expire']
@@ -78,7 +80,7 @@ class salt_remote:
                 continue
             response = request.json()['return'][0]
             result = {key: response[key] for key in response if key not in self.skipped_nodes}
-            if check_status and (False in result.values() or not result):
+            if check_status and (False in list(result.values()) or not result):
                 logging.warning("One or several nodes are not responding. Output {}".format(json.dumps(result, indent=4)))
                 continue
             break
@@ -95,7 +97,7 @@ class salt_remote:
         If all nodes returns nothing, then exception is thrown.
         """
         response = self.cmd(tgt=tgt, param=param, expr_form=expr_form)
-        for node in response.keys():
+        for node in list(response.keys()):
             if response[node] or response[node] == '':
                 return response[node]
         else:
@@ -111,7 +113,7 @@ class salt_remote:
         :param fail_if_empty
         """
         response = self.cmd(tgt=tgt, fun='pillar.get', param=param, expr_form=expr_form)
-        for node in response.keys():
+        for node in list(response.keys()):
             if response[node] or response[node] != '':
                 return response[node]
         else:
@@ -143,9 +145,9 @@ def calculate_groups():
     nodes_names = set ()
     expr_form = ''
     all_nodes = set(local_salt_client.test_ping(tgt='*', expr_form=None))
-    if 'groups' in config.keys() and 'PB_GROUPS' in os.environ.keys() and \
+    if 'groups' in list(config.keys()) and 'PB_GROUPS' in list(os.environ.keys()) and \
        os.environ['PB_GROUPS'].lower() != 'false':
-        nodes_names.update(config['groups'].keys())
+        nodes_names.update(list(config['groups'].keys()))
         expr_form = 'compound'
     else:
         for node in all_nodes:
@@ -178,14 +180,14 @@ def calculate_groups():
 
         node_groups[node_name] = [x for x in nodes
                                   if x not in config['skipped_nodes']
-                                  if x not in gluster_nodes.keys()
-                                  if x not in kvm_nodes.keys()]
+                                  if x not in list(gluster_nodes.keys())
+                                  if x not in list(kvm_nodes.keys())]
         all_nodes = set(all_nodes - set(node_groups[node_name]))
         if node_groups[node_name] == []:
             del node_groups[node_name]
             if kvm_nodes:
-                node_groups['kvm'] = kvm_nodes.keys()
-            node_groups['kvm_gluster'] = gluster_nodes.keys()
+                node_groups['kvm'] = list(kvm_nodes.keys())
+            node_groups['kvm_gluster'] = list(gluster_nodes.keys())
     all_nodes = set(all_nodes - set(kvm_nodes.keys()))
     all_nodes = set(all_nodes - set(gluster_nodes.keys()))
     if all_nodes:
@@ -201,9 +203,8 @@ def get_configuration():
         os.path.dirname(os.path.abspath(__file__)), "../global_config.yaml")
     with open(global_config_file, 'r') as file:
         global_config = yaml.load(file, Loader=yaml.SafeLoader)
-
-    for param in global_config.keys():
-        if param in os.environ.keys():
+    for param in list(global_config.keys()):
+        if param in list(os.environ.keys()):
             if ',' in os.environ[param]:
                 global_config[param] = []
                 for item in os.environ[param].split(','):

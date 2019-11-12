@@ -22,7 +22,7 @@ def test_check_services(local_salt_client, nodes_in_group):
                                               fun='service.get_all',
                                               expr_form='compound')
 
-    if len(services_by_nodes.keys()) < 2:
+    if len(list(services_by_nodes.keys())) < 2:
         pytest.skip("Nothing to compare - only 1 node")
 
     # PROD-30833
@@ -36,8 +36,8 @@ def test_check_services(local_salt_client, nodes_in_group):
                                         fun='pillar.get',
                                         param='octavia:manager:enabled',
                                         expr_form='compound')
-        gtws = [gtw for gtw in octavia.values() if gtw]
-        if len(gtws) == 1 and gtw01 in services_by_nodes.keys():
+        gtws = [gtw for gtw in list(octavia.values()) if gtw]
+        if len(gtws) == 1 and gtw01 in list(services_by_nodes.keys()):
             services_by_nodes.pop(gtw01)
             logging.info("gtw01 node is skipped in test_check_services")
 
@@ -69,7 +69,7 @@ def test_check_services(local_salt_client, nodes_in_group):
                 # Not found expected service on node
                 service_existence[node] = "No service"
         if set(service_existence.values()).__len__() > 1:
-            report = ["{node}: {status}".format(node=node, status=status) for node, status in service_existence.items()]
+            report = ["{node}: {status}".format(node=node, status=status) for node, status in list(service_existence.items())]
             report.sort()
             report.insert(0, srv)
             pkts_data.append(report)

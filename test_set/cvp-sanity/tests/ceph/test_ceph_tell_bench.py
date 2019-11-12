@@ -22,12 +22,12 @@ def test_ceph_tell_bench(local_salt_client):
         pytest.skip("Ceph is not found on this environment")
 
     cmd_result = local_salt_client.cmd(
-        ceph_monitors.keys()[0], 
+        list(ceph_monitors.keys())[0], 
         'cmd.run', ["ceph tell osd.* bench -f json"], 
         expr_form='glob').get(
-            ceph_monitors.keys()[0]).split('\n')
+            list(ceph_monitors.keys())[0]).split('\n')
 
-    cmd_result = filter(None, cmd_result)
+    cmd_result = [_f for _f in cmd_result if _f]
 
     osd_pool = {}
     for osd in cmd_result:
@@ -38,14 +38,14 @@ def test_ceph_tell_bench(local_salt_client):
     osd_count = 0
     for osd in osd_pool:
         osd_count += 1
-        mbps_sum += json.loads(
-            osd_pool[osd])['bytes_per_sec'] / 1000000
+        mbps_sum += old_div(json.loads(
+            osd_pool[osd])['bytes_per_sec'], 1000000)
 
-    mbps_avg = mbps_sum / osd_count
+    mbps_avg = mbps_sum // osd_count
     result = {}
     for osd in osd_pool:
         mbps = json.loads(
-            osd_pool[osd])['bytes_per_sec'] / 1000000
+            osd_pool[osd])['bytes_per_sec'] // 1000000
         if math.fabs(mbps_avg - mbps) > 10:
             result[osd] = osd_pool[osd]
 

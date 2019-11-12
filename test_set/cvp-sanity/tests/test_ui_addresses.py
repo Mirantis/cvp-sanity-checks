@@ -33,7 +33,7 @@ def test_public_openstack(local_salt_client, ctl_nodes_pillar):
         tgt=ctl_nodes_pillar,
         param='curl -k {}/ 2>&1 | grep stable'.format(url),
         expr_form='pillar')
-    assert len(result[result.keys()[0]]) != 0, (
+    assert len(result[list(result.keys())[0]]) != 0, (
         'Public Openstack url is not reachable on {} from ctl '
         'nodes'.format(url)
     )
@@ -55,7 +55,7 @@ def test_internal_ui_kibana(local_salt_client, ctl_nodes_pillar):
         tgt=ctl_nodes_pillar,
         param='curl -k {}/app/kibana 2>&1 | grep loading'.format(url),
         expr_form='pillar')
-    assert len(result[result.keys()[0]]) != 0, (
+    assert len(result[list(result.keys())[0]]) != 0, (
         'Internal Kibana login page is not reachable on {} from ctl '
         'nodes'.format(url)
     )
@@ -73,7 +73,7 @@ def test_public_ui_kibana(local_salt_client, ctl_nodes_pillar):
         tgt=ctl_nodes_pillar,
         param='curl -k {}/app/kibana 2>&1 | grep loading'.format(url),
         expr_form='pillar')
-    assert len(result[result.keys()[0]]) != 0, (
+    assert len(result[list(result.keys())[0]]) != 0, (
         'Public Kibana login page is not reachable on {} from ctl '
         'nodes'.format(url)
     )
@@ -92,7 +92,7 @@ def test_internal_ui_prometheus(local_salt_client, ctl_nodes_pillar):
         tgt=ctl_nodes_pillar,
         param='curl {}/graph 2>&1 | grep Prometheus'.format(url),
         expr_form='pillar')
-    assert len(result[result.keys()[0]]) != 0, (
+    assert len(result[list(result.keys())[0]]) != 0, (
         'Internal Prometheus page is not reachable on {} from ctl '
         'nodes'.format(url)
     )
@@ -130,7 +130,7 @@ def test_public_ui_prometheus(local_salt_client, ctl_nodes_pillar):
         'Issues with accessing public prometheus ui on {}:\n{}'.format(
             url, response.text)
     )
-    assert response.content.find('Prometheus Time Series Collection') > -1, (
+    assert response.content.decode().find('Prometheus Time Series Collection') > -1, (
         'Public Prometheus page is not reachable on {} from ctl '
         'nodes'.format(url)
     )
@@ -149,7 +149,7 @@ def test_internal_ui_alert_manager(local_salt_client, ctl_nodes_pillar):
         tgt=ctl_nodes_pillar,
         param='curl -s {}/ | grep Alertmanager'.format(url),
         expr_form='pillar')
-    assert len(result[result.keys()[0]]) != 0, (
+    assert len(result[list(result.keys())[0]]) != 0, (
         'Internal AlertManager page is not reachable on {} from ctl '
         'nodes'.format(url)
     )
@@ -188,7 +188,7 @@ def test_public_ui_alert_manager(local_salt_client, ctl_nodes_pillar):
         'Issues with accessing public alert manager ui on {}:\n{}'.format(
             url, response.text)
     )
-    assert response.content.find('<title>Alertmanager</title>') > -1, (
+    assert response.content.decode().find('<title>Alertmanager</title>') > -1, (
         'Public AlertManager page is not reachable on {} '
         'from ctl nodes'.format(url)
     )
@@ -207,7 +207,7 @@ def test_internal_ui_grafana(local_salt_client, ctl_nodes_pillar):
         tgt=ctl_nodes_pillar,
         param='curl {}/login 2>&1 | grep Grafana'.format(url),
         expr_form='pillar')
-    assert len(result[result.keys()[0]]) != 0, (
+    assert len(result[list(result.keys())[0]]) != 0, (
         'Internal Grafana page is not reachable on {} '
         'from ctl nodes'.format(url)
     )
@@ -225,7 +225,7 @@ def test_public_ui_grafana(local_salt_client, ctl_nodes_pillar):
         tgt=ctl_nodes_pillar,
         param='curl -k {}/login 2>&1 | grep Grafana'.format(url),
         expr_form='pillar')
-    assert len(result[result.keys()[0]]) != 0, (
+    assert len(result[list(result.keys())[0]]) != 0, (
         'Public Grafana page is not reachable on {} from ctl nodes'.format(url)
     )
 
@@ -243,7 +243,7 @@ def test_internal_ui_alerta(local_salt_client, ctl_nodes_pillar):
         tgt=ctl_nodes_pillar,
         param='curl {}/ 2>&1 | grep Alerta'.format(url),
         expr_form='pillar')
-    assert len(result[result.keys()[0]]) != 0, (
+    assert len(result[list(result.keys())[0]]) != 0, (
         'Internal Alerta page is not reachable on {} from '
         'ctl nodes'.format(url)
     )
@@ -261,7 +261,7 @@ def test_public_ui_alerta(local_salt_client, ctl_nodes_pillar):
         tgt=ctl_nodes_pillar,
         param='curl -k {}/ 2>&1 | grep Alerta'.format(url),
         expr_form='pillar')
-    assert len(result[result.keys()[0]]) != 0, (
+    assert len(result[list(result.keys())[0]]) != 0, (
         'Public Alerta page is not reachable on {} from ctl nodes'.format(url))
 
 
@@ -278,7 +278,7 @@ def test_public_ui_jenkins(local_salt_client, ctl_nodes_pillar):
         tgt=ctl_nodes_pillar,
         param='curl -k {}/ 2>&1 | grep Authentication'.format(url),
         expr_form='pillar')
-    assert len(result[result.keys()[0]]) != 0, (
+    assert len(result[list(result.keys())[0]]) != 0, (
         'Public Jenkins page is not reachable on {} from ctl nodes'.format(url)
     )
 
@@ -296,5 +296,5 @@ def test_public_ui_gerrit(local_salt_client, ctl_nodes_pillar):
         tgt=ctl_nodes_pillar,
         param='curl -k {}/ 2>&1 | grep "Gerrit Code Review"'.format(url),
         expr_form='pillar')
-    assert len(result[result.keys()[0]]) != 0, (
+    assert len(result[list(result.keys())[0]]) != 0, (
         'Public Gerrit page is not reachable on {} from ctl nodes'.format(url))

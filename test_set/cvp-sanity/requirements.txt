@@ -4,7 +4,6 @@ requests>=2.20.0
 flake8
 PyYAML
 python-jenkins==0.4.11
-pygerrit2==2.0.6
+pygerrit2==2.0.9
 gitpython
-python-ldap
-
+ldap3

@@ -12,7 +12,7 @@ def test_check_default_gateways(local_salt_client, nodes_in_group):
 
     gateways = {}
 
-    for node in netstat_info.keys():
+    for node in list(netstat_info.keys()):
         gateway = netstat_info[node]
         if isinstance(gateway, bool):
             gateway = 'Cannot access node(-s)'
@@ -21,7 +21,7 @@ def test_check_default_gateways(local_salt_client, nodes_in_group):
         else:
             gateways[gateway].append(node)
 
-    assert len(gateways.keys()) == 1, (
+    assert len(list(gateways.keys())) == 1, (
         "There is a problem with default gateway for '{}' group of nodes:\n"
         "{}".format(group, json.dumps(gateways, indent=4))
     )

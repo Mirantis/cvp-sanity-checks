@@ -18,7 +18,7 @@ def test_mounted_file_systems(local_salt_client, nodes_in_group):
 
     # Let's exclude cmp, kvm, ceph OSD nodes, mon, cid, k8s-ctl, k8s-cmp nodes
     # These nodes will have different mounts and this is expected
-    exclude_nodes = local_salt_client.test_ping(
+    exclude_nodes = list(local_salt_client.test_ping(
          tgt="I@nova:compute or "
              "I@ceph:osd or "
              "I@salt:control or "
@@ -26,9 +26,9 @@ def test_mounted_file_systems(local_salt_client, nodes_in_group):
              "I@kubernetes:* and not I@etcd:* or "
              "I@docker:host and not I@prometheus:server and not I@kubernetes:* or "
              "I@gerrit:client and I@kubernetes:pool and not I@salt:master",
-         expr_form='compound').keys()
+         expr_form='compound').keys())
 
-    if len(mounts_by_nodes.keys()) < 2:
+    if len(list(mounts_by_nodes.keys())) < 2:
         pytest.skip("Nothing to compare - only 1 node")
 
     result = {}

@@ -1,3 +1,4 @@
+from builtins import str
 import pytest
 
 
@@ -13,7 +14,7 @@ def test_ceph_replicas(local_salt_client):
     if not ceph_monitors:
         pytest.skip("Ceph is not found on this environment")
 
-    monitor = ceph_monitors.keys()[0]
+    monitor = list(ceph_monitors.keys())[0]
 
     raw_pool_replicas = local_salt_client.cmd_any(
         tgt='ceph:mon',
@@ -31,8 +32,8 @@ def test_ceph_replicas(local_salt_client):
         pools_replicas[pool_name] = pool_replicas
     
     error = []
-    for pool, replicas in pools_replicas.items():
-        for replica, value in replicas.items():
+    for pool, replicas in list(pools_replicas.items()):
+        for replica, value in list(replicas.items()):
             if replica == 'min_size' and value < 2:
                 error.append(pool + " " + replica + " " 
                 + str(value) + " must be 2")

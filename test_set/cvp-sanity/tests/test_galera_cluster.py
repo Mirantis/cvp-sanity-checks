@@ -1,3 +1,4 @@
+from builtins import str
 import pytest
 
 
@@ -18,7 +19,7 @@ def test_galera_cluster_status(local_salt_client):
     size_cluster = []
     amount = len(gs)
 
-    for item in gs.values():
+    for item in list(gs.values()):
         size_cluster.append(item.split('\n')[-1].strip())
 
     assert all(item == str(amount) for item in size_cluster), \

@@ -19,7 +19,7 @@ def test_mtu(local_salt_client, nodes_in_group):
         param='ls /sys/class/net/',
         expr_form='compound')
 
-    if len(network_info.keys()) < 2:
+    if len(list(network_info.keys())) < 2:
         pytest.skip("Nothing to compare - only 1 node")
 
     # collect all nodes and check if virsh is installed there
@@ -30,12 +30,12 @@ def test_mtu(local_salt_client, nodes_in_group):
         expr_form='pillar'
     )
 
-    for node, ifaces_info in network_info.iteritems():
+    for node, ifaces_info in network_info.items():
         if isinstance(ifaces_info, bool):
             logging.info("{} node is skipped".format(node))
             continue
         # if node is a kvm node and virsh is installed there
-        if node in kvm_nodes.keys() and kvm_nodes[node]:
+        if node in list(kvm_nodes.keys()) and kvm_nodes[node]:
             kvm_info = local_salt_client.cmd(tgt=node,
                                              param="virsh list | "
                                                    "awk '{print $2}' | "
@@ -62,12 +62,12 @@ def test_mtu(local_salt_client, nodes_in_group):
 
     for node in total:
         nodes.append(node)
-        my_set.update(total[node].keys())
+        my_set.update(list(total[node].keys()))
     for interf in my_set:
         diff = []
         row = []
         for node in nodes:
-            if interf in total[node].keys():
+            if interf in list(total[node].keys()):
                 diff.append(total[node][interf])
                 row.append("{}: {}".format(node, total[node][interf]))
             else:

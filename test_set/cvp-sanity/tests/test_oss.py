@@ -21,7 +21,7 @@ def test_oss_status(local_salt_client, check_cicd):
     proxies = {"http": None, "https": None}
     csv_result = requests.get('http://{}:9600/haproxy?stats;csv"'.format(
                               HAPROXY_STATS_IP),
-                              proxies=proxies).content
+                              proxies=proxies).content.decode()
     data = csv_result.lstrip('# ')
     wrong_data = []
     list_of_services = ['aptly', 'openldap', 'gerrit', 'jenkins', 'postgresql',

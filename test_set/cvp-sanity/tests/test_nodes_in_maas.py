@@ -53,7 +53,7 @@ def test_nodes_deployed_in_maas(local_salt_client):
         expr_form='pillar')
     result = ""
     try:
-        result = json.loads(get_nodes.values()[0])
+        result = json.loads(list(get_nodes.values())[0])
     except ValueError as e:
         assert result, "Could not get '{}' nodes:\n{}".format(get_nodes, e)
 
@@ -62,7 +62,7 @@ def test_nodes_deployed_in_maas(local_salt_client):
     for node in result:
         if node["fqdn"] in config.get("skipped_nodes"):
             continue
-        if "status_name" in node.keys():
+        if "status_name" in list(node.keys()):
             if node["status_name"] != 'Deployed':
                 failed_nodes.append({node["fqdn"]: node["status_name"]})
     assert not failed_nodes, (
