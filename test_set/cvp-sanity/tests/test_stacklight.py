@@ -143,21 +143,32 @@ def test_stacklight_services_replicas(local_salt_client):
 @pytest.mark.usefixtures('check_prometheus')
 def test_prometheus_alert_count(local_salt_client, ctl_nodes_pillar):
     IP = local_salt_client.pillar_get(param='_param:cluster_public_host')
+    prometheus_password_old = local_salt_client.pillar_get(
+        param='_param:keepalived_prometheus_vip_password_generated')
+    prometheus_password = local_salt_client.pillar_get(
+        param='_param:prometheus_server_proxy_password_generated')
     proto = local_salt_client.pillar_get(
         param='_param:cluster_public_protocol')
+    proxies = {"http": None, "https": None}
     # keystone:server can return 3 nodes instead of 1
     # this will be fixed later
     # TODO
-    nodes_info = local_salt_client.cmd(
-        tgt=ctl_nodes_pillar,
-        param='curl -k -s {0}://{1}:15010/alerts | grep icon-chevron-down | '
-              'grep -v "0 active"'.format(proto, IP),
-        expr_form='pillar')
-
-    result = nodes_info[nodes_info.keys()[0]].replace('</td>', '').replace(
-        '<td><i class="icon-chevron-down"></i> <b>', '').replace('</b>', '')
-    assert result == '', 'AlertManager page has some alerts!\n{}'.format(
-        json.dumps(result), indent=4)
+    if prometheus_password == '':
+        prometheus_password = prometheus_password_old
+    response = requests.get(
+        '{0}://{1}:15010/api/v1/alerts'.format(proto, IP),
+        proxies=proxies,
+        auth=('prometheus', prometheus_password))
+    assert response.status_code == 200, (
+        'Issues with accessing prometheus alerts on {}:\n{}'.format(
+            IP, response.text)
+    )
+    alerts = json.loads(response.content)
+    short_alerts = ''
+    for i in alerts['data']['alerts']:
+        short_alerts = '{}* {}\n'.format(short_alerts, i['annotations']['description'])
+    assert alerts['data']['alerts'] == [], 'AlertManager page has some alerts!\n{}'.format(
+        short_alerts)
 
 
 @pytest.mark.sl_dup
