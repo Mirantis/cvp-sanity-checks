@@ -9,7 +9,6 @@ import logging
 #move to sl?
 def test_ntp_sync(local_salt_client):
     """Test checks that system time is the same across all nodes"""
-
     config = utils.get_configuration()
     nodes_time = local_salt_client.cmd(
         tgt='*',
@@ -26,10 +25,12 @@ def test_ntp_sync(local_salt_client):
             result[time].sort()
         else:
             result[time] = [node]
-    assert len(result) <= 1, (
-        'Time is out of sync on the following nodes:\n{}'.format(
-            json.dumps(result, indent=4))
-    )
+    for time in result:
+        time_diff = abs(int(time)-int(list(result)[0]))
+        assert time_diff <= config.get("maximum_time_diff"), (
+            'Time is out of sync on the following nodes:\n{}'.format(
+                json.dumps(result, indent=4))
+        )
 
 
 @pytest.mark.flaky(reruns=5, reruns_delay=60)

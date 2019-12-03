@@ -106,6 +106,10 @@ jenkins_cvp_job: 'cvp-sanity'
 # this test may skip specific node (use fqdn)
 ntp_skipped_nodes: []
 
+# Maximum time diff for nodes
+# Need for case if test test_ntp_sync is running on the border between seconds
+maximum_time_diff: 1
+
 # packages need to skip in
 # test_check_package_versions
 skipped_packages: []
