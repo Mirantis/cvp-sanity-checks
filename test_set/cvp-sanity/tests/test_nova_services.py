@@ -17,22 +17,35 @@ def test_nova_services_status(local_salt_client):
 @pytest.mark.smoke
 @pytest.mark.usefixtures('check_openstack')
 def test_nova_hosts_consistent(local_salt_client):
+    # exclude bmt* nodes because they also have nova-compute running
+    # but they are not the hypervisors
+    ironic = local_salt_client.test_ping(tgt='ironic:client')
+    if ironic:
+        ironic_nodes = [i.split('.')[0] for i in ironic]
+        grep_exclude_ironic = "| egrep -v '{}'".format("|".join(ironic_nodes))
+    else:
+        grep_exclude_ironic = ""
+
     all_cmp_services = local_salt_client.cmd_any(
         tgt='keystone:server',
         param='. /root/keystonercv3;'
-              'nova service-list | grep "nova-compute" | wc -l')
+              'nova service-list | grep "nova-compute" '
+              '{} | wc -l'.format(grep_exclude_ironic))
     enabled_cmp_services = local_salt_client.cmd_any(
         tgt='keystone:server',
         param='. /root/keystonercv3;'
-              'nova service-list | grep "nova-compute" | grep "enabled" | wc -l')
+              'nova service-list | grep "nova-compute" | grep "enabled" '
+              '{} | wc -l'.format(grep_exclude_ironic))
     hosts = local_salt_client.cmd_any(
         tgt='keystone:server',
         param='. /root/keystonercv3;'
-              'openstack host list | grep "compute" | wc -l')
+              'openstack host list | grep "compute" '
+              '{} | wc -l'.format(grep_exclude_ironic))
     hypervisors = local_salt_client.cmd_any(
         tgt='keystone:server',
         param='. /root/keystonercv3;'
-              'openstack hypervisor list | egrep -v "\-----|ID" | wc -l')
+              'openstack hypervisor list | egrep -v "\-----|ID" '
+              '{} | wc -l'.format(grep_exclude_ironic))
 
     assert all_cmp_services == hypervisors, (
         "Number of nova-compute services ({}) does not match number of "
