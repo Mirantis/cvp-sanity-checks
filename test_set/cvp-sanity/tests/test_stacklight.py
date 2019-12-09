@@ -145,16 +145,25 @@ def test_prometheus_alert_count(local_salt_client, ctl_nodes_pillar):
     IP = local_salt_client.pillar_get(param='_param:cluster_public_host')
     prometheus_password_old = local_salt_client.pillar_get(
         param='_param:keepalived_prometheus_vip_password_generated')
-    prometheus_password = local_salt_client.pillar_get(
+    prometheus_password_generated = local_salt_client.pillar_get(
         param='_param:prometheus_server_proxy_password_generated')
+    # New password in 2019.2.7
+    prometheus_password_from_nginx =  local_salt_client.pillar_get(
+        tgt="nginx:server",
+        param='_param:nginx_proxy_prometheus_server_password')
     proto = local_salt_client.pillar_get(
         param='_param:cluster_public_protocol')
     proxies = {"http": None, "https": None}
     # keystone:server can return 3 nodes instead of 1
     # this will be fixed later
     # TODO
-    if prometheus_password == '':
+    if prometheus_password_from_nginx:
+        prometheus_password = prometheus_password_from_nginx
+    elif prometheus_password_generated:
+        prometheus_password = prometheus_password_generated
+    else:
         prometheus_password = prometheus_password_old
+
     response = requests.get(
         '{0}://{1}:15010/api/v1/alerts'.format(proto, IP),
         proxies=proxies,
