@@ -118,6 +118,10 @@ class salt_remote:
             if fail_if_empty:
                 raise Exception("No pillar found or it is empty.")
             else:
+                logging.error(
+                    "suppressed incorrect response from pillar_get: {}".format(
+                        response
+                ))
                 return False
 
 

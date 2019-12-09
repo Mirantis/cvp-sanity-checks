@@ -104,20 +104,31 @@ def test_public_ui_prometheus(local_salt_client, ctl_nodes_pillar):
     IP = local_salt_client.pillar_get(param='_param:cluster_public_host')
     prometheus_password_old = local_salt_client.pillar_get(
         param='_param:keepalived_prometheus_vip_password_generated')
-    prometheus_password = local_salt_client.pillar_get(
+    prometheus_password_generated = local_salt_client.pillar_get(
         param='_param:prometheus_server_proxy_password_generated')
+    # New password in 2019.2.7
+    prometheus_password_from_nginx = local_salt_client.pillar_get(
+        tgt="nginx:server",
+        param='_param:nginx_proxy_prometheus_server_password')
     proto = local_salt_client.pillar_get(
         param='_param:cluster_public_protocol')
     proxies = {"http": None, "https": None}
-    if prometheus_password == '':
+
+    if prometheus_password_from_nginx:
+        prometheus_password = prometheus_password_from_nginx
+    elif prometheus_password_generated:
+        prometheus_password = prometheus_password_generated
+    else:
         prometheus_password = prometheus_password_old
+
+    url = '{0}://{1}:15010/graph'.format(proto, IP)
     response = requests.get(
-        '{0}://{1}:15010/graph'.format(proto, IP),
+        url,
         proxies=proxies,
         auth=('prometheus', prometheus_password))
     assert response.status_code == 200, (
         'Issues with accessing public prometheus ui on {}:\n{}'.format(
-            IP, response.text)
+            url, response.text)
     )
     assert response.content.find('Prometheus Time Series Collection') > -1, (
         'Public Prometheus page is not reachable on {} from ctl '
@@ -148,22 +159,34 @@ def test_internal_ui_alert_manager(local_salt_client, ctl_nodes_pillar):
 @pytest.mark.usefixtures('check_prometheus')
 def test_public_ui_alert_manager(local_salt_client, ctl_nodes_pillar):
     IP = local_salt_client.pillar_get(param='_param:cluster_public_host')
-    alermanager_password_old = local_salt_client.pillar_get(
+    alertmanager_password_old = local_salt_client.pillar_get(
         param='_param:keepalived_prometheus_vip_password_generated')
-    alermanager_password = local_salt_client.pillar_get(
-        param='_param:prometheus_alermanager_proxy_password_generated')
+    alertmanager_password_generated = local_salt_client.pillar_get(
+        param='_param:prometheus_alertmanager_proxy_password_generated')
+    # New password location in 2019.2.7
+    alertmanager_from_nginx = local_salt_client.pillar_get(
+        tgt="nginx:server",
+        param='_param:nginx_proxy_prometheus_alertmanager_password')
+
+    if alertmanager_from_nginx:
+        alertmanager_password = alertmanager_from_nginx
+    elif alertmanager_password_generated:
+        alertmanager_password = alertmanager_password_generated
+    else:
+        alertmanager_password = alertmanager_password_old
+
     proto = local_salt_client.pillar_get(
         param='_param:cluster_public_protocol')
     proxies = {"http": None, "https": None}
-    if alermanager_password == '':
-        alermanager_password = alermanager_password_old
+    url = '{0}://{1}:15011/'.format(proto, IP)
+
     response = requests.get(
-        '{0}://{1}:15011/'.format(proto, IP),
+        url,
         proxies=proxies,
-        auth=('alertmanager', alermanager_password))
+        auth=('alertmanager', alertmanager_password))
     assert response.status_code == 200, (
         'Issues with accessing public alert manager ui on {}:\n{}'.format(
-            IP, response.text)
+            url, response.text)
     )
     assert response.content.find('<title>Alertmanager</title>') > -1, (
         'Public AlertManager page is not reachable on {} '
