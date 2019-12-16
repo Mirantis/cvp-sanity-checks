@@ -19,7 +19,7 @@ def test_nova_services_status(local_salt_client):
 def test_nova_hosts_consistent(local_salt_client):
     # exclude bmt* nodes because they also have nova-compute running
     # but they are not the hypervisors
-    ironic = local_salt_client.test_ping(tgt='ironic:client')
+    ironic = local_salt_client.test_ping(tgt='ironic:conductor')
     if ironic:
         ironic_nodes = [i.split('.')[0] for i in ironic]
         grep_exclude_ironic = "| egrep -v '{}'".format("|".join(ironic_nodes))
