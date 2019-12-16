@@ -66,8 +66,10 @@ def os_resources(openstack_clients):
     os_resource['image_id'] = str(os_images_list[0])
 
     os_resource['flavor_id'] = [flavor.id for flavor in openstack_clients.compute.flavors.list() if flavor.name == flavor_name]
+    flavor_is_created = False
     if not os_resource['flavor_id']:
         os_resource['flavor_id'] = os_actions.create_flavor(flavor_name, flavor_ram, flavor_vcpus, flavor_disk).id
+        flavor_is_created = True
     else:
         os_resource['flavor_id'] = str(os_resource['flavor_id'][0])
 
@@ -100,5 +102,5 @@ def os_resources(openstack_clients):
 
     openstack_clients.compute.security_groups.delete(os_resource['sec_group'].id)
     openstack_clients.compute.keypairs.delete(os_resource['keypair'].name)
-
-    openstack_clients.compute.flavors.delete(os_resource['flavor_id'])
+    if flavor_is_created:
+        openstack_clients.compute.flavors.delete(os_resource['flavor_id'])
