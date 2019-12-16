@@ -75,7 +75,8 @@ def os_resources(openstack_clients):
 
     os_resource['sec_group'] = os_actions.create_sec_group()
     os_resource['keypair'] = openstack_clients.compute.keypairs.create(
-        '{}-{}'.format(flavor_name, random.randrange(100, 999)))
+        '{}-{}'.format('spt-key', random.randrange(100, 999))
+    )
     os_resource['net1'] = os_actions.create_network_resources()
     os_resource['ext_net'] = os_actions.get_external_network()
     adm_tenant = os_actions.get_admin_tenant()
