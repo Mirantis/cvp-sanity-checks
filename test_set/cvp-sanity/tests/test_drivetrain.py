@@ -20,6 +20,7 @@ from ldap3.core.exceptions import LDAPException
 from pygerrit2 import GerritRestAPI, HTTPBasicAuth
 from requests import HTTPError
 from xml.dom import minidom
+from collections import defaultdict
 
 
 def join_to_gerrit(local_salt_client, gerrit_user, gerrit_password):
@@ -313,28 +314,38 @@ def test_drivetrain_components_and_versions(local_salt_client, check_cicd):
     stack_info = local_salt_client.pillar_get(tgt='gerrit:client',
                                                    param='docker:client:stack')
 
-    expected_images = list()
+    expected_images_list = list()
     # find services in list of docker clients
     for key, stack in list(stack_info.items()):
         if stack.get('service'):
-            stack = [item.get('image') for _,item in list(stack.get('service').items()) if item.get('image')]
-            expected_images += stack
+            stack = [item.get('image') for _, item in
+                     list(stack.get('service').items()) if item.get('image')]
+            expected_images_list += stack
+    expected_images = defaultdict(list)
 
-    mismatch = {}
-    actual_images = {}
-    for image in set(table_with_docker_services[list(table_with_docker_services.keys())[0]].split('\n')):
-        actual_images[get_name(image)] = get_tag(image)
+    # collect unique tags for each image in same structure as for actual images
+    for image in expected_images_list:
+        if get_name(image) in expected_images:
+            if get_tag(image) not in expected_images[get_name(image)]:
+                expected_images[get_name(image)].append(get_tag(image))
+        else:
+            expected_images[get_name(image)].append(get_tag(image))
 
-    for image in set(expected_images):
-        im_name = get_name(image)
-        if im_name not in actual_images:
-            mismatch[im_name] = 'not found on env'
-        elif get_tag(image) != actual_images[im_name]:
-            mismatch[im_name] = 'has {actual} version instead of {expected}'.format(
-                actual=actual_images[im_name], expected=get_tag(image))
-    assert len(mismatch) == 0, (
+    # collect tags for each image in same structure as for expected images
+    actual_images = defaultdict(list)
+    for image in set(table_with_docker_services[
+                         list(table_with_docker_services.keys())[0]].split('\n')):
+        actual_images[get_name(image)].append(get_tag(image))
+
+    # find difference between defaultdicts
+    total_diff = 0
+    for i in expected_images:
+        diff = set(expected_images[i]) - set(actual_images[i])
+        total_diff += len(diff)
+
+    assert actual_images == expected_images, (
         "Some DriveTrain components do not have expected versions:\n{}".format(
-            json.dumps(mismatch, indent=4))
+            json.dumps(total_diff, indent=4))
     )
 
 
