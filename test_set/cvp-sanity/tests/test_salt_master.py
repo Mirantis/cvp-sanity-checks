@@ -38,13 +38,8 @@ def test_reclass_nodes(local_salt_client):
         expr_form='pillar', check_status=True).values())[0] or {}
     reclass_warnings = reclass[list(reclass.keys())[0]].split('{\n  "base":')[0]
     if reclass_warnings:
-<<<<<<< HEAD   (a59105 [CVP-SPT] generate keypair without flavor name)
-        print "\nReclass-salt output has warnings"
-    reclass_nodes = reclass[reclass.keys()[0]].split('{\n  "base":')[1]
-=======
         logging.warning("\nReclass-salt output has warnings: {}".format(reclass_warnings))
     reclass_nodes = reclass[list(reclass.keys())[0]].split('{\n  "base":')[1]
->>>>>>> CHANGE (e32e3f Migrate cvp-sanity to Python3)
     assert reclass_nodes != '', 'No nodes were found in' \
                                 ' reclass-salt --top output'
     reclass_nodes = sorted(json.loads(reclass_nodes.strip("}")).keys())
