@@ -19,7 +19,7 @@ WORKDIR /var/lib/
 COPY bin/ /usr/local/bin/
 COPY test_set/ ./
 #
-RUN set -ex; pushd /etc/apt/ && echo > sources.list && \
+RUN set -exo pipefail; pushd /etc/apt/ && echo > sources.list && \
     echo 'Acquire::Languages "none";' > apt.conf.d/docker-no-languages && \
     echo 'Acquire::GzipIndexes "true"; Acquire::CompressionTypes::Order:: "gz";' > apt.conf.d/docker-gzip-indexes && \
     echo 'APT::Get::Install-Recommends "false"; APT::Get::Install-Suggests "false";' > apt.conf.d/docker-recommends && \
@@ -31,33 +31,16 @@ RUN set -ex; pushd /etc/apt/ && echo > sources.list && \
     python-virtualenv \
 # Enable these packages while porting to Python3  =>  python3-virtualenv python3-dev  \
 # Due to upstream bug we should use fixed version of pip
-    && python -m pip install --upgrade 'pip==19.3.1'  \
-    # initialize cvp sanity test suite
-          && pushd cvp-sanity  \
-          && virtualenv --python=python3  venv \
-          && . venv/bin/activate \
-          && pip3 install -r requirements.txt \
-          && deactivate \
-          && popd \
-    # initialize cvp spt test suite
-          && pushd cvp-spt  \
-          && virtualenv --python=python2  venv \
-          && . venv/bin/activate \
-          && pip install -r requirements.txt \
-          && deactivate \
-          && popd  \
+    && pip install -U pip==20.0.2  \
+    && pip install tox  \
     # initialize cvp stacklight test suite
-          && mkdir cvp-stacklight \
-          && pushd cvp-stacklight  \
-          && virtualenv --system-site-packages venv \
-          && . venv/bin/activate \
-          && git clone -b $SL_TEST_BRANCH $SL_TEST_REPO  \
-          && pushd stacklight-pytest \
-          && git log -n1 \
-          && pip install . \
-          && pip install -r requirements.txt  \
-          && deactivate \
-          && popd && popd  \
+        && mkdir cvp-stacklight \
+        && pushd cvp-stacklight  \
+        && git clone -b $SL_TEST_BRANCH $SL_TEST_REPO  \
+        && pushd stacklight-pytest \
+        && git log -n1 \
+        && popd && popd  \
+        && tox --recreate \
 # Cleanup
     && apt-get -y purge libx11-data xauth libxmuu1 libxcb1 libx11-6 libxext6 ppp pppconfig pppoeconf popularity-contest cpp gcc g++ libssl-doc && \
     apt-get -y autoremove; apt-get -y clean ; rm -rf /root/.cache; rm -rf /var/lib/apt/lists/* && \
