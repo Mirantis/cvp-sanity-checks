@@ -3,8 +3,69 @@ import requests
 import datetime
 import pytest
 
+import utils
+import logging
+
+# ################################ FIXTURES ##################################
+
+
+def prometheus_rules():
+    salt = utils.init_salt_client()
+
+    IP = salt.pillar_get(param='_param:cluster_public_host')
+    proto = salt.pillar_get(
+        param='_param:cluster_public_protocol')
+    proxies = {"http": None, "https": None}
+
+    prometheus_password = (
+        # new password in 2019.2.7
+        salt.pillar_get(
+            tgt="nginx:server",
+            param='_param:nginx_proxy_prometheus_server_password')
+
+        # Generated password ~2019.2.4
+        or salt.pillar_get(
+            param='_param:prometheus_server_proxy_password_generated')
+
+        # old password ~ 2019.2.0
+        or salt.pillar_get(
+            param='_param:keepalived_prometheus_vip_password_generated')
+    )
+
+    response = requests.get(
+        '{0}://{1}:15010/api/v1/rules'.format(proto, IP),
+        proxies=proxies,
+        auth=('prometheus', prometheus_password),
+        verify=False)
+
+    if not response.status_code == 200:
+        return list()
+
+    content = json.loads(response.content.decode())
+    rules = content['data']['groups'][0]["rules"]
+
+    # collect rules with dict {'rulename' : {<rulecontent>}}
+    alerts_by_name = {rule['name']: rule['alerts']
+                      for rule in rules
+                      }
+    logging.debug("collected next rules: {}".format(alerts_by_name))
+    return alerts_by_name
+
+
+prometheus_rules = prometheus_rules()
+
+
+@pytest.fixture(scope='session',
+                ids=prometheus_rules.keys(),
+                params=prometheus_rules.values())
+def alert_in_prometheus(request):
+    return request.param
+
+# ############################## TESTS #######################################
+
+
 @pytest.mark.sl_dup
-#ElasticsearchClusterHealthStatusMajor or stacklight-pytest
+# ElasticsearchClusterHealthStatusMajor or stacklight-pytest
 @pytest.mark.full
 @pytest.mark.usefixtures('check_kibana')
 def test_elasticsearch_cluster(local_salt_client):
@@ -38,7 +99,7 @@ def test_elasticsearch_cluster(local_salt_client):
 
 
 @pytest.mark.sl_dup
-#stacklight-pytest
+# stacklight-pytest
 @pytest.mark.full
 @pytest.mark.usefixtures('check_kibana')
 def test_kibana_status(local_salt_client):
@@ -96,7 +157,8 @@ def test_elasticsearch_node_count(local_salt_client):
             IP, response.text)
     )
     resp = json.loads(response.text)
-    cluster_domain = local_salt_client.pillar_get(param='_param:cluster_domain')
+    cluster_domain = local_salt_client.pillar_get(
+        param='_param:cluster_domain')
     monitored_nodes = []
     for item_ in resp['aggregations']['uniq_hostname']['buckets']:
         node_name = item_['key']
@@ -114,7 +176,7 @@ def test_elasticsearch_node_count(local_salt_client):
 
 
 @pytest.mark.sl_dup
-#DockerServiceMonitoring*
+# DockerServiceMonitoring*
 @pytest.mark.full
 def test_stacklight_services_replicas(local_salt_client):
     # TODO
@@ -140,48 +202,18 @@ def test_stacklight_services_replicas(local_salt_client):
 
 
 @pytest.mark.smoke
-@pytest.mark.usefixtures('check_prometheus')
-def test_prometheus_alert_count(local_salt_client, ctl_nodes_pillar):
-    IP = local_salt_client.pillar_get(param='_param:cluster_public_host')
-    prometheus_password_old = local_salt_client.pillar_get(
-        param='_param:keepalived_prometheus_vip_password_generated')
-    prometheus_password_generated = local_salt_client.pillar_get(
-        param='_param:prometheus_server_proxy_password_generated')
-    # New password in 2019.2.7
-    prometheus_password_from_nginx =  local_salt_client.pillar_get(
-        tgt="nginx:server",
-        param='_param:nginx_proxy_prometheus_server_password')
-    proto = local_salt_client.pillar_get(
-        param='_param:cluster_public_protocol')
-    proxies = {"http": None, "https": None}
-    # keystone:server can return 3 nodes instead of 1
-    # this will be fixed later
-    # TODO
-    if prometheus_password_from_nginx:
-        prometheus_password = prometheus_password_from_nginx
-    elif prometheus_password_generated:
-        prometheus_password = prometheus_password_generated
-    else:
-        prometheus_password = prometheus_password_old
+def test_prometheus_alert_count(alert_in_prometheus):
 
-    response = requests.get(
-        '{0}://{1}:15010/api/v1/alerts'.format(proto, IP),
-        proxies=proxies,
-        auth=('prometheus', prometheus_password))
-    assert response.status_code == 200, (
-        'Issues with accessing prometheus alerts on {}:\n{}'.format(
-            IP, response.text)
-    )
-    alerts = json.loads(response.content.decode())
-    short_alerts = ''
-    for i in alerts['data']['alerts']:
-        short_alerts = '{}* {}\n'.format(short_alerts, i['annotations']['description'])
-    assert alerts['data']['alerts'] == [], 'AlertManager page has some alerts!\n{}'.format(
-        short_alerts)
+    assert len(alert_in_prometheus) == 0, \
+        '\n\n\tAlertManager page has some alerts!\n{} \n'.format(
+            '\n'.join(
+                [alert['annotations']['description']
+                 for alert in alert_in_prometheus]
+            ))
 
 
 @pytest.mark.sl_dup
-#DockerServiceMonitoring* ??
+# DockerServiceMonitoring* ??
 @pytest.mark.full
 def test_stacklight_containers_status(local_salt_client):
     salt_output = local_salt_client.cmd(
@@ -216,7 +248,7 @@ def test_stacklight_containers_status(local_salt_client):
 
 
 @pytest.mark.sl_dup
-#PrometheusTargetDown
+# PrometheusTargetDown
 @pytest.mark.full
 def test_running_telegraf_services(local_salt_client):
     salt_output = local_salt_client.cmd(tgt='telegraf:agent',
@@ -238,7 +270,7 @@ def test_running_telegraf_services(local_salt_client):
 
 
 @pytest.mark.sl_dup
-#PrometheusTargetDown
+# PrometheusTargetDown
 @pytest.mark.full
 def test_running_fluentd_services(local_salt_client):
     salt_output = local_salt_client.cmd(tgt='fluentd:agent',
