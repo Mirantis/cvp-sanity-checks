@@ -21,7 +21,7 @@ def test_single_vip_exists(local_salt_client):
 
     # Let's exclude cmp, kvm, ceph OSD nodes, k8s-cmp, cfg, apt, dns,
     # gtw, ceph mon nodes
-    exclude_nodes = local_salt_client.test_ping(
+    exclude_nodes = list(local_salt_client.test_ping(
          tgt="I@nova:compute or "                 # cmp
              "I@ceph:osd or "                     # ceph osd
              "I@salt:control or "                 # kvm
@@ -31,7 +31,7 @@ def test_single_vip_exists(local_salt_client):
              "I@powerdns:server or "              # dns
              "I@debmirror:client or "             # apt
              "I@kubernetes:* and not I@etcd:*",   # k8s-cmp
-         expr_form='compound').keys()
+         expr_form='compound').keys())
 
     # bmk nodes has no unique pillar, let's add it separately to skip
     bmk_hostname = local_salt_client.pillar_get(
