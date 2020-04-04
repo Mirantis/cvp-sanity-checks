@@ -12,6 +12,18 @@ def test_list_of_repo_on_nodes(local_salt_client, nodes_in_group):
                                       param='linux:system:repo',
                                       expr_form='compound')
 
+    secure_info = local_salt_client.cmd(
+        tgt='L@' + ','.join(nodes), fun='pillar.get',
+        param='linux:system:common_repo_secured', expr_form='compound')
+
+    secured_repos, username, password = ([], None, None)
+
+    if isinstance(secure_info, dict) and len(secure_info) > 0:
+        info_tmp = secure_info.popitem()[1]
+        if isinstance(info_tmp, dict):
+            secured_repos, username, password = (info_tmp.get(key, [])
+                for key in ['secured_repos', 'user', 'password'])
+
     # check if some repos are disabled
     for node in list(info_salt.keys()):
         repos = info_salt[node]
@@ -24,14 +36,20 @@ def test_list_of_repo_on_nodes(local_salt_client, nodes_in_group):
             if "enabled" in repository:
                 if not repository["enabled"]:
                     repos.pop(repo)
+            if repo in secured_repos or ('all' in secured_repos and
+                                         repos[repo].get('secure', True)):
+                repos[repo]['source'] = repos[repo]['source'].replace(
+                    '://', '://{}:{}@'.format(username, password))
 
     raw_actual_info = local_salt_client.cmd(
         tgt='L@' + ','.join(nodes),
         param='cat /etc/apt/sources.list.d/*;'
               'cat /etc/apt/sources.list|grep deb|grep -v "#"',
         expr_form='compound', check_status=True)
-    actual_repo_list = [item.replace('/ ', ' ').replace('[arch=amd64] ', '')
-                        for item in list(raw_actual_info.values())[0].split('\n')]
+    actual_repo_list = [
+        item.replace('/ ', ' ').replace('[arch=amd64] ', '')
+        for item in list(raw_actual_info.values())[0].split('\n')
+    ]
     if list(info_salt.values())[0] == '':
         expected_salt_data = ''
     else:
