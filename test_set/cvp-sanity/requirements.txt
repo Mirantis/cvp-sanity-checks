@@ -3,7 +3,7 @@ pytest-rerunfailures==7.0
 requests>=2.20.0
 flake8
 PyYAML
-python-jenkins==0.4.11
+python-jenkins==1.7.0
 pygerrit2==2.0.9
 gitpython
 ldap3
