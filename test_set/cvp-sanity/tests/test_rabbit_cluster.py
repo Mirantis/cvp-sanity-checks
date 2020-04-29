@@ -3,8 +3,8 @@ import pytest
 
 
 @pytest.mark.sl_dup
-#RabbitmqServiceDown, RabbitmqErrorLogsTooHigh
-#TODO: a better test
+# RabbitmqServiceDown, RabbitmqErrorLogsTooHigh
+# TODO: a better test
 @pytest.mark.full
 def test_checking_rabbitmq_cluster(local_salt_client):
     # disable config for this test
@@ -21,10 +21,39 @@ def test_checking_rabbitmq_cluster(local_salt_client):
     # with required cluster size for each node
     control_dict = {}
     required_cluster_size_dict = {}
+
+    # check rabbitmq version
+    version_data = local_salt_client.cmd(
+        tgt='I@rabbitmq:server',
+        fun='pkg.version',
+        param='rabbitmq-server',
+        expr_form='compound'
+    )
+
+    rabbitmq_versions = set(version_data.values())
+
+    assert len(rabbitmq_versions) == 1, (
+        "Non-matching RabbitMQ versions installed:{}".format(version_data)
+    )
+
+    rabbitmq_version = rabbitmq_versions.pop()
+
+    # check if the installed RabbitMQ is 3.8
+    newer_rabbit = int(local_salt_client.cmd(
+        tgt='I@salt:master',
+        fun='pkg.version_cmp',
+        param=['{}'.format(rabbitmq_version), '3.8'],
+        expr_form='compound'
+    ).popitem()[1]) >= 0
+
+    suffix = ' --formatter erlang' if newer_rabbit else ''
     # request actual data from rmq nodes
     rabbit_actual_data = local_salt_client.cmd(
         tgt='rabbitmq:server',
-        param='rabbitmqctl cluster_status', expr_form='pillar')
+        param=r'rabbitmqctl cluster_status{} '
+              r'| grep "nodes,\|running_nodes"'.format(suffix),
+        expr_form='pillar'
+    )
     for node in rabbitmq_pillar_data:
         if node in config.get('skipped_nodes'):
             del rabbit_actual_data[node]
@@ -37,14 +66,14 @@ def test_checking_rabbitmq_cluster(local_salt_client):
     for node in rabbit_actual_data:
         running_nodes_count = 0
         # rabbitmqctl cluster_status output contains
-        # 3 * # of nodes 'rabbit@' entries + 1
-        running_nodes_count = (rabbit_actual_data[node].count('rabbit@') - 1)//3
+        # 2 * # of nodes 'rabbit@' entries
+        running_nodes_count = rabbit_actual_data[node].count('rabbit@') // 2
         # update control dictionary with values
         # {node:actual_cluster_size_for_node}
         if required_cluster_size_dict[node] != running_nodes_count:
             control_dict.update({node: running_nodes_count})
 
-    assert not len(control_dict), (
+    assert len(control_dict) == 0, (
         "RabbitMQ cluster is probably "
         "broken - the cluster size for each node should be ({}),\nbut the "
         "following nodes have other values:\n{}".format(
