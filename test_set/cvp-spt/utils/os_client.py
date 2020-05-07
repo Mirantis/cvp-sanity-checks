@@ -270,10 +270,14 @@ class OSCliActions(object):
                 if net["admin_state_up"] and net["router:external"] and
                 len(net["subnets"])
             ]
-            if networks:
-                ext_net = networks[0]
-            else:
-                ext_net = self.create_fake_external_network()
+        else:
+            networks = [net for net in self.os_clients.network.list_networks()["networks"]
+            if net["name"] == ext_net]
+ 
+        if networks:
+            ext_net = networks[0]
+        else:
+            ext_net = self.create_fake_external_network()
         return ext_net
 
     def create_flavor(self, name, ram=256, vcpus=1, disk=2):
