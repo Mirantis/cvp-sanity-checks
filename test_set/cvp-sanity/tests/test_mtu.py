@@ -32,16 +32,26 @@ def test_mtu(local_salt_client, nodes_in_group):
 
     for node, ifaces_info in network_info.items():
         if isinstance(ifaces_info, bool):
-            logging.info("{} node is skipped".format(node))
+            logging.info("{} node skipped. No interfaces available.".format(node))
             continue
         # if node is a kvm node and virsh is installed there
         if node in list(kvm_nodes.keys()) and kvm_nodes[node]:
-            kvm_info = local_salt_client.cmd(tgt=node,
-                                             param="virsh list | "
-                                                   "awk '{print $2}' | "
-                                                   "xargs -n1 virsh domiflist | "
-                                                   "grep -v br-pxe | grep br- | "
-                                                   "awk '{print $1}'")
+            domain_name = node.split(".", 1)[1]
+            # vms_count calculated separately to have readable output
+            # and for further debug if needed
+            vms_count = local_salt_client.cmd(tgt=node, param="virsh list | grep {}"
+                                              .format(domain_name))
+            if not vms_count[node]:
+                logging.info("{} node skipped. No OS vm's running.".format(node))
+                continue
+            # param assumes that KVM has OS vm's running.
+            # virsh list | grep domain_name --- fails
+            # if KVM has nothing to grep and test fails
+            param = "virsh list | grep " + domain_name + "| awk '{print $2}' | " \
+                                                         "xargs -n1 virsh domiflist | " \
+                                                         "grep -v br-pxe | grep br- | " \
+                                                         "awk '{print $1}' "
+            kvm_info = local_salt_client.cmd(tgt=node, param=param)
             ifaces_info = kvm_info.get(node)
         node_ifaces = ifaces_info.split('\n')
         ifaces = {}
