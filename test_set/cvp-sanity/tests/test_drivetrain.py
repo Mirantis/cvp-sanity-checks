@@ -22,6 +22,10 @@ from requests import HTTPError
 from xml.dom import minidom
 from collections import defaultdict
 
+# ############################ FIXTURES ######################################
+user_name = 'DT_test_user'
+user_pass = 'aSecretPassw'
+
 
 def join_to_gerrit(local_salt_client, gerrit_user, gerrit_password):
     # Workaround for issue in test_drivetrain.join_to_jenkins https://github.com/kennethreitz/requests/issues/3829
@@ -78,6 +82,88 @@ def get_password(local_salt_client,service):
         tgt=service,
         param='_param:openldap_admin_password')
     return password
+
+
+@pytest.fixture(scope='module')
+def ldap_conn_from_new_admin(local_salt_client):
+    """
+      1. Create a test user 'DT_test_user' in openldap
+      2. Add the user to admin group
+
+    :return:  connection to ldap with new created user
+    Finally, delete the user from admin group and openldap
+    """
+    ldap_password = get_password(local_salt_client, 'openldap:client')
+    # Check that ldap_password is exists, otherwise skip test
+    if not ldap_password:
+        pytest.skip("Openldap service or openldap:client pillar \
+        are not found on this environment.")
+    ldap_port = local_salt_client.pillar_get(
+        tgt='I@openldap:client and not I@salt:master',
+        param='_param:haproxy_openldap_bind_port',
+        expr_form='compound')
+    ldap_address = local_salt_client.pillar_get(
+        tgt='I@openldap:client and not I@salt:master',
+        param='_param:haproxy_openldap_bind_host',
+        expr_form='compound')
+    ldap_dc = local_salt_client.pillar_get(
+        tgt='openldap:client',
+        param='_param:openldap_dn')
+    ldap_admin_name = local_salt_client.pillar_get(
+        tgt='openldap:client',
+        param='openldap:client:server:auth:user')
+    ldap_admin_password = local_salt_client.pillar_get(
+        tgt='openldap:client',
+        param='openldap:client:server:auth:password')
+
+    ldap_user_name = 'cn={0},ou=people,{1}'.format(user_name, ldap_dc)
+
+    # Admins group CN
+    admin_gr_dn = 'cn=admins,ou=groups,{0}'.format(ldap_dc)
+    # List of attributes for test user
+    attrs = {
+        'cn': user_name,
+        'sn': user_name,
+        'uid': user_name,
+        'userPassword': user_pass,
+        'objectClass': ['shadowAccount', 'inetOrgPerson'],
+        'description': 'Test user for CVP DT test'
+    }
+    logging.warning("LOCALS  {}".format(locals()))
+    ldap_server = Server(host=ldap_address, port=ldap_port,
+                         use_ssl=False, get_info='NO_INFO')
+    admin_conn = Connection(ldap_server,
+                            user=ldap_admin_name,
+                            password=ldap_admin_password)
+
+    admin_conn.bind()
+    # Add new user
+    new_user = admin_conn.add(ldap_user_name, 'person', attrs)
+    assert new_user, 'new_user: {}\n error: {}'.format(new_user,
+                                                       admin_conn.result)
+    # Add him to admins group
+    modified_user = admin_conn.modify(admin_gr_dn,
+                                      {'memberUid': (MODIFY_ADD, [user_name])})
+    assert modified_user, "added user to admins: {} \n error: {}".format(
+        modified_user,
+        admin_conn.result)
+
+    user_conn = Connection(ldap_server,
+                           user=ldap_user_name,
+                           password=user_pass)
+    user_conn.bind()
+
+    # ###########################
+    yield user_conn
+    # ###########################
+    user_conn.unbind()
+    admin_conn.modify(admin_gr_dn, {
+        'memberUid': (MODIFY_DELETE, [user_name])
+    })
+    admin_conn.delete(ldap_user_name)
+    admin_conn.unbind()
+
+# ########################### TESTS ##########################################
 
 
 @pytest.mark.full
@@ -145,121 +231,54 @@ def test_drivetrain_gerrit(local_salt_client, check_cicd):
 
 
 @pytest.mark.full
-@pytest.mark.skip
-# Temporary skipped, ldap3 package add\search user is not working
-def test_drivetrain_openldap(local_salt_client, check_cicd):
+def test_openldap_new_user_can_connect_jenkins(local_salt_client,
+                                               check_cicd,
+                                               ldap_conn_from_new_admin):
     """
-         1. Create a test user 'DT_test_user' in openldap
-         2. Add the user to admin group
-         3. Login using the user to Jenkins
-         4. Check that no error occurred
-         5. Add the user to devops group in Gerrit and then login to Gerrit
-        using test_user credentials.
-         6 Start job in jenkins from this user
-         7. Get info from gerrit  from this user
-         6. Finally, delete the user from admin
-        group and openldap
+         1. Start job in jenkins from new ldap user
     """
-
-    # TODO split to several test cases. One check - per one test method. Make the login process in fixture
-    ldap_password = get_password(local_salt_client, 'openldap:client')
-    # Check that ldap_password is exists, otherwise skip test
-    if not ldap_password:
-        pytest.skip("Openldap service or openldap:client pillar \
-        are not found on this environment.")
-    ldap_port = local_salt_client.pillar_get(
-        tgt='I@openldap:client and not I@salt:master',
-        param='_param:haproxy_openldap_bind_port',
-        expr_form='compound')
-    ldap_address = local_salt_client.pillar_get(
-        tgt='I@openldap:client and not I@salt:master',
-        param='_param:haproxy_openldap_bind_host',
-        expr_form='compound')
-    ldap_dc = local_salt_client.pillar_get(
-        tgt='openldap:client',
-        param='_param:openldap_dn')
-    ldap_con_admin = local_salt_client.pillar_get(
-        tgt='openldap:client',
-        param='openldap:client:server:auth:user')
-    ldap_url = 'ldap://{0}:{1}'.format(ldap_address, ldap_port)
-    ldap_error = ''
-    ldap_result = ''
-    gerrit_result = ''
-    gerrit_error = ''
-    jenkins_error = ''
-    # Test user's CN
-    test_user_name = 'DT_test_user'
-    test_user = 'cn={0},ou=people,{1}'.format(test_user_name, ldap_dc)
-    # Admins group CN
-    admin_gr_dn = 'cn=admins,ou=groups,{0}'.format(ldap_dc)
-    user_pass = 'aSecretPassw'
-    # List of attributes for test user
-    attrs = {}
-    attrs['objectclass'] = ['organizationalRole', 'simpleSecurityObject', 'shadowAccount']
-    attrs['cn'] = test_user_name
-    attrs['uid'] = test_user_name
-    attrs['userPassword'] = user_pass
-    attrs['description'] = 'Test user for CVP DT test'
-    # search_filter = '(cn={0})'.format(test_user_name)
-    search_filter = '(cn={})'.format(test_user_name)
     # Get a test job name from config
     config = utils.get_configuration()
     jenkins_cvp_job = config['jenkins_cvp_job']
-    logging.warning('test_user: {}'.format(test_user))
-    logging.warning('ldap_address: {}'.format(ldap_address))
-    # Open connection to ldap and creating test user in admins group
+    jenkins_error = ''
     try:
-        ldap_server = Server(host=ldap_address, port=ldap_port,
-                             use_ssl=False, get_info='NO_INFO')
-        conn = Connection(ldap_server, client_strategy=LDIF)
-        conn.bind()
-        new_user = conn.add(test_user, test_user_name, attrs)
-        logging.warning('new_user: {}'.format(new_user))
-        conn.modify(admin_gr_dn,
-                    {'memberUid': (MODIFY_ADD, [test_user_name])
-                     })
-        # Check search test user in LDAP
-        conn2 = Connection(ldap_server)
-        conn2.bind()
-        ldap_result = conn2.search(search_base='dc=heat-cicd-queens-contrail41-sl,dc=local',
-                                   search_filter=search_filter, search_scope='SUBTREE', attributes=['cn'])
-        logging.warning('ldap_result: {}'.format(ldap_result))
-        logging.warning('conn2.entries.: {}'.format(conn2.entries))
-    except LDAPException as e:
-        ldap_error = e
-    try:
-        # Check if user is created before connect from Jenkins
-        assert ldap_result, "Test user {} is not found".format(ldap_result)
         # Check connection between Jenkins and LDAP
-        jenkins_server = join_to_jenkins(local_salt_client, test_user_name, user_pass)
+        jenkins_server = join_to_jenkins(local_salt_client, user_name, user_pass)
         jenkins_version = jenkins_server.get_job_name(jenkins_cvp_job)
+    except jenkins.JenkinsException as e:
+        jenkins_error = e
+    assert jenkins_error == '', (
+        "Connection to Jenkins is not established:\n{}".format(jenkins_error))
+
+
+@pytest.mark.full
+def test_openldap_new_user_can_connect_gerrit(local_salt_client, check_cicd, ldap_conn_from_new_admin):
+    """
+         1. Add the user to devops group in Gerrit
+         2. Login to Gerrit using test_user credentials.
+
+    """
+    ldap_password = get_password(local_salt_client, 'openldap:client')
+    gerrit_error = ''
+
+    try:
         # Check connection between Gerrit and LDAP
         gerrit_server = join_to_gerrit(local_salt_client, 'admin', ldap_password)
         gerrit_check = gerrit_server.get("/changes/?q=owner:self%20status:open")
+
         # Add test user to devops-contrib group in Gerrit and check login
-        _link = "/groups/devops-contrib/members/{0}".format(test_user_name)
+        _link = "/groups/devops-contrib/members/{0}".format(user_name)
         gerrit_add_user = gerrit_server.put(_link)
-        gerrit_server = join_to_gerrit(local_salt_client, test_user_name, user_pass)
-        gerrit_result = gerrit_server.get("/changes/?q=owner:self%20status:open")
+
+        # Login to Gerrit as a user
+        gerrit_server = join_to_gerrit(local_salt_client, user_name, user_pass)
+        gerrit_result = gerrit_server.get(
+            "/changes/?q=owner:self%20status:open")
     except HTTPError as e:
         gerrit_error = e
-    except jenkins.JenkinsException as e:
-        jenkins_error = e
-    finally:
-        conn.modify(admin_gr_dn,
-                    {'memberUid': (MODIFY_DELETE, [test_user_name])
-                     })
-        conn.delete(test_user)
-        conn.unbind()
-        conn2.unbind()
 
-    assert ldap_error == '', (
-        "There is an error with connection to LDAP:\n{}".format(ldap_error))
-    assert jenkins_error == '', (
-        "Connection to Jenkins is not established:\n{}".format(jenkins_error))
     assert gerrit_error == '', (
         "Connection to Gerrit is not established:\n{}".format(gerrit_error))
-
 
 
 @pytest.mark.sl_dup
