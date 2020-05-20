@@ -30,7 +30,14 @@ def prometheus_rules():
         # old password ~ 2019.2.0
         or salt.pillar_get(
             param='_param:keepalived_prometheus_vip_password_generated')
+
+        or ""
     )
+
+    if prometheus_password == "":
+        logging.warning("Got empty prometheus_password. \
+                        Possibly this cluster with no Stacklight component")
+        return dict()
 
     response = requests.get(
         '{0}://{1}:15010/api/v1/rules'.format(proto, IP),
@@ -39,7 +46,9 @@ def prometheus_rules():
         verify=False)
 
     if not response.status_code == 200:
-        return list()
+        logging.warning(
+            "Got response with incorrect status: {}".format(response))
+        return dict()
 
     content = json.loads(response.content.decode())
     rules = content['data']['groups'][0]["rules"]
@@ -55,6 +64,7 @@ def prometheus_rules():
 prometheus_rules = prometheus_rules()
 
 
+@pytest.mark.usefixtures('check_prometheus')
 @pytest.fixture(scope='session',
                 ids=prometheus_rules.keys(),
                 params=prometheus_rules.values())
