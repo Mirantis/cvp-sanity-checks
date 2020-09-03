@@ -1,9 +1,10 @@
 pytest==3.7.1
 pytest-rerunfailures==7.0
-requests>=2.20.0
-flake8
-PyYAML
+requests==2.24.0
+flake8==3.8.3
+PyYAML==5.3.1
 python-jenkins==1.7.0
 pygerrit2==2.0.9
-gitpython
-ldap3
+GitPython==3.1.7
+ldap3==2.7
+
