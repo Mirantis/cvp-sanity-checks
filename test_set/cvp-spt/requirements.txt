@@ -1,4 +1,4 @@
-requests==2.24.0 # LGPLv2.1+
+paramiko==2.7.2 # LGPLv2.1+
 pytest==4.6.11 # MIT
 python-cinderclient==6.0.0 # Apache-2.0
 python-glanceclient==3.0.0  # Apache-2.0
