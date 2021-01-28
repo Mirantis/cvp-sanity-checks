@@ -17,6 +17,9 @@ def test_checking_rabbitmq_cluster(local_salt_client):
         fun='pillar.get',
         param='rabbitmq:cluster',
         expr_form='pillar')
+    # skip the test if there is no cluster data in pillars
+    if sum([len(v) for v in rabbitmq_pillar_data.values()]) == 0:
+        pytest.skip("No RabbitMQ cluster pillar available")
     # creating dictionary {node:cluster_size_for_the_node}
     # with required cluster size for each node
     control_dict = {}
