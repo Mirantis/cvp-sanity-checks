@@ -191,7 +191,7 @@ def test_check_module_versions(local_salt_client, nodes_in_group):
 def test_restricted_updates_repo(local_salt_client):
     restricted_repo_enabled = local_salt_client.pillar_get(
         tgt="I@salt:master",
-        param='_param:updates_mirantis_version',
+        param='_param:updates_mirantis_login',
         expr_form='compound')
     if not restricted_repo_enabled:
         pytest.skip("This env doesn't required the restricted ubuntu repo")
@@ -201,7 +201,7 @@ def test_restricted_updates_repo(local_salt_client):
         param="apt-cache policy |grep updates.mirantis.com"
         )
 
-    assert all(repos_by_nodes.values()), \
+    assert all(list(repos_by_nodes.values())), \
         "Next nodes don't have updates.mirantis.com in sources.list: {}".\
             format({node for node, repo
                    in repos_by_nodes.items()
