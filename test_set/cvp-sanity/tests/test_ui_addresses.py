@@ -23,16 +23,16 @@ def test_ui_horizon(local_salt_client, ctl_nodes_pillar):
 
 @pytest.mark.smoke
 @pytest.mark.usefixtures('check_openstack')
-def test_public_openstack(local_salt_client, ctl_nodes_pillar):
+def test_public_openstack(local_salt_client):
     IP = local_salt_client.pillar_get(param='_param:cluster_public_host')
     proto = local_salt_client.pillar_get(
         param='_param:cluster_public_protocol')
     port = '5000'
     url = "{}://{}:{}/v3".format(proto, IP, port)
     result = local_salt_client.cmd(
-        tgt=ctl_nodes_pillar,
+        tgt="I@nginx:server and not I@salt:master",
         param='curl -k {}/ 2>&1 | grep stable'.format(url),
-        expr_form='pillar')
+        expr_form='compound')
     assert len(result[list(result.keys())[0]]) != 0, (
         'Public Openstack url is not reachable on {} from ctl '
         'nodes'.format(url)
@@ -43,7 +43,7 @@ def test_public_openstack(local_salt_client, ctl_nodes_pillar):
 #stacklight-pytest?
 @pytest.mark.full
 @pytest.mark.usefixtures('check_kibana')
-def test_internal_ui_kibana(local_salt_client, ctl_nodes_pillar):
+def test_internal_ui_kibana(local_salt_client):
     IP = local_salt_client.pillar_get(param='_param:stacklight_log_address')
     ssl = local_salt_client.pillar_get(
         tgt='kibana:server',
@@ -52,9 +52,9 @@ def test_internal_ui_kibana(local_salt_client, ctl_nodes_pillar):
     port = '5601'
     url = "{}://{}:{}".format(proto, IP, port)
     result = local_salt_client.cmd(
-        tgt=ctl_nodes_pillar,
+        tgt="I@nginx:server and not I@salt:master",
         param='curl -k {}/app/kibana 2>&1 | grep loading'.format(url),
-        expr_form='pillar')
+        expr_form='compound')
     assert len(result[list(result.keys())[0]]) != 0, (
         'Internal Kibana login page is not reachable on {} from ctl '
         'nodes'.format(url)
@@ -63,16 +63,16 @@ def test_internal_ui_kibana(local_salt_client, ctl_nodes_pillar):
 
 @pytest.mark.smoke
 @pytest.mark.usefixtures('check_kibana')
-def test_public_ui_kibana(local_salt_client, ctl_nodes_pillar):
+def test_public_ui_kibana(local_salt_client):
     IP = local_salt_client.pillar_get(param='_param:cluster_public_host')
     proto = local_salt_client.pillar_get(
         param='_param:cluster_public_protocol')
     port = '5601'
     url = "{}://{}:{}".format(proto, IP, port)
     result = local_salt_client.cmd(
-        tgt=ctl_nodes_pillar,
+        tgt="I@nginx:server and not I@salt:master",
         param='curl -k {}/app/kibana 2>&1 | grep loading'.format(url),
-        expr_form='pillar')
+        expr_form='compound')
     assert len(result[list(result.keys())[0]]) != 0, (
         'Public Kibana login page is not reachable on {} from ctl '
         'nodes'.format(url)
@@ -100,7 +100,7 @@ def test_internal_ui_prometheus(local_salt_client, ctl_nodes_pillar):
 
 @pytest.mark.smoke
 @pytest.mark.usefixtures('check_prometheus')
-def test_public_ui_prometheus(local_salt_client, ctl_nodes_pillar):
+def test_public_ui_prometheus(local_salt_client):
     IP = local_salt_client.pillar_get(param='_param:cluster_public_host')
     prometheus_password_old = local_salt_client.pillar_get(
         param='_param:keepalived_prometheus_vip_password_generated')
@@ -157,7 +157,7 @@ def test_internal_ui_alert_manager(local_salt_client, ctl_nodes_pillar):
 
 @pytest.mark.smoke
 @pytest.mark.usefixtures('check_prometheus')
-def test_public_ui_alert_manager(local_salt_client, ctl_nodes_pillar):
+def test_public_ui_alert_manager(local_salt_client):
     IP = local_salt_client.pillar_get(param='_param:cluster_public_host')
     alertmanager_password_old = local_salt_client.pillar_get(
         param='_param:keepalived_prometheus_vip_password_generated')
@@ -215,16 +215,16 @@ def test_internal_ui_grafana(local_salt_client, ctl_nodes_pillar):
 
 @pytest.mark.smoke
 @pytest.mark.usefixtures('check_grafana')
-def test_public_ui_grafana(local_salt_client, ctl_nodes_pillar):
+def test_public_ui_grafana(local_salt_client):
     IP = local_salt_client.pillar_get(param='_param:cluster_public_host')
     proto = local_salt_client.pillar_get(
         param='_param:cluster_public_protocol')
     port = '8084'
     url = "{}://{}:{}".format(proto, IP, port)
     result = local_salt_client.cmd(
-        tgt=ctl_nodes_pillar,
+        tgt="I@nginx:server and not I@salt:master",
         param='curl -k {}/login 2>&1 | grep Grafana'.format(url),
-        expr_form='pillar')
+        expr_form='compound')
     assert len(result[list(result.keys())[0]]) != 0, (
         'Public Grafana page is not reachable on {} from ctl nodes'.format(url)
     )
@@ -251,16 +251,16 @@ def test_internal_ui_alerta(local_salt_client, ctl_nodes_pillar):
 
 @pytest.mark.smoke
 @pytest.mark.usefixtures('check_alerta')
-def test_public_ui_alerta(local_salt_client, ctl_nodes_pillar):
+def test_public_ui_alerta(local_salt_client):
     IP = local_salt_client.pillar_get(param='_param:cluster_public_host')
     proto = local_salt_client.pillar_get(
         param='_param:cluster_public_protocol')
     port = '15017'
     url = "{}://{}:{}".format(proto, IP, port)
     result = local_salt_client.cmd(
-        tgt=ctl_nodes_pillar,
+        tgt="I@nginx:server and not I@salt:master",
         param='curl -k {}/ 2>&1 | grep Alerta'.format(url),
-        expr_form='pillar')
+        expr_form='compound')
     assert len(result[list(result.keys())[0]]) != 0, (
         'Public Alerta page is not reachable on {} from ctl nodes'.format(url))
 
@@ -268,16 +268,16 @@ def test_public_ui_alerta(local_salt_client, ctl_nodes_pillar):
 @pytest.mark.smoke
 @pytest.mark.usefixtures('check_openstack')
 @pytest.mark.usefixtures('check_drivetrain')
-def test_public_ui_jenkins(local_salt_client, ctl_nodes_pillar):
+def test_public_ui_jenkins(local_salt_client):
     IP = local_salt_client.pillar_get(param='_param:cluster_public_host')
     proto = local_salt_client.pillar_get(
         param='_param:cluster_public_protocol')
     port = '8081'
     url = "{}://{}:{}".format(proto, IP, port)
     result = local_salt_client.cmd(
-        tgt=ctl_nodes_pillar,
+        tgt="I@nginx:server and not I@salt:master",
         param='curl -k {}/ 2>&1 | grep Authentication'.format(url),
-        expr_form='pillar')
+        expr_form='compound')
     assert len(result[list(result.keys())[0]]) != 0, (
         'Public Jenkins page is not reachable on {} from ctl nodes'.format(url)
     )
@@ -286,15 +286,15 @@ def test_public_ui_jenkins(local_salt_client, ctl_nodes_pillar):
 @pytest.mark.smoke
 @pytest.mark.usefixtures('check_openstack')
 @pytest.mark.usefixtures('check_drivetrain')
-def test_public_ui_gerrit(local_salt_client, ctl_nodes_pillar):
+def test_public_ui_gerrit(local_salt_client):
     IP = local_salt_client.pillar_get(param='_param:cluster_public_host')
     proto = local_salt_client.pillar_get(
         param='_param:cluster_public_protocol')
     port = '8070'
     url = "{}://{}:{}".format(proto, IP, port)
     result = local_salt_client.cmd(
-        tgt=ctl_nodes_pillar,
+        tgt="I@nginx:server and not I@salt:master",
         param='curl -k {}/ 2>&1 | grep "Gerrit Code Review"'.format(url),
-        expr_form='pillar')
+        expr_form='compound')
     assert len(result[list(result.keys())[0]]) != 0, (
         'Public Gerrit page is not reachable on {} from ctl nodes'.format(url))
