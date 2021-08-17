@@ -127,69 +127,52 @@ def test_packages_are_latest(local_salt_client, nodes_in_group):
 
 @pytest.mark.full
 def test_check_module_versions(local_salt_client, nodes_in_group):
-    # defines modules specific to the concrete nodes
-    inconsistency_rule = {"I@elasticsearch:server": ["elasticsearch"]}
+    # defines modules specific to the nodes
+    inconsistency_rule = {
+        "I@elasticsearch:server": ["elasticsearch"],
+        # PROD-30833
+        "I@octavia:manager:controller_worker:loadbalancer_topology:SINGLE": []
+    }
     exclude_modules = utils.get_configuration().get("skipped_modules", [])
     group, nodes = nodes_in_group
+
     pre_check = local_salt_client.cmd(
-        tgt="L@"+','.join(nodes),
+        tgt="L@{nodes}".format(nodes=','.join(nodes)),
         param='dpkg -l | grep "python-pip "',
         expr_form='compound')
+    exclude_nodes = targeted_minions("I@galera:master or I@gerrit:client")
     if list(pre_check.values()).count('') > 0:
         pytest.skip("pip is not installed on one or more nodes")
 
-    exclude_nodes = targeted_minions("I@galera:master or I@gerrit:client")
-
-    # PROD-30833
-    gtw01 = local_salt_client.pillar_get(
-        param='_param:openstack_gateway_node01_hostname') or 'gtw01'
-    cluster_domain = local_salt_client.pillar_get(
-        param='_param:cluster_domain') or '.local'
-    gtw01 += '.' + cluster_domain
-    if gtw01 in nodes:
-        octavia = local_salt_client.cmd(tgt="L@" + ','.join(nodes),
-                                        fun='pillar.get',
-                                        param='octavia:manager:enabled',
-                                        expr_form='compound')
-        gtws = [gtw for gtw in list(octavia.values()) if gtw]
-        if len(gtws) == 1:
-            exclude_nodes.append(gtw01)
-            logging.info("gtw01 node is skipped in test_check_module_versions")
-
-    total_nodes = [i for i in list(pre_check.keys()) if i not in exclude_nodes]
-
+    total_nodes = [node
+                   for node in nodes
+                   if node not in exclude_nodes]
     if len(total_nodes) < 2:
         pytest.skip("Nothing to compare - only 1 node")
     list_of_pip_packages = local_salt_client.cmd(
         tgt="L@"+','.join(nodes),
-        fun='pip.freeze', expr_form='compound')
+        fun='pip.list', expr_form='compound')
 
-    nodes_with_packages = []
+    modules_with_different_versions = dict()
+    packages_names = set(itertools.chain.from_iterable(
+        list_of_pip_packages.values()
+    ))
 
-    modules_with_different_versions = []
-    packages_names = set()
-
-    for node in total_nodes:
-        nodes_with_packages.append(node)
-        packages_names.update([x.split("=")[0] for x in list_of_pip_packages[node]])
-        list_of_pip_packages[node] = dict([x.split("==") for x in list_of_pip_packages[node]])
-
-    for deb in packages_names:
-        if deb in exclude_modules:
+    for package in packages_names:
+        if package in exclude_modules:
             continue
-        diff = []
-        row = []
-        for node in nodes_with_packages:
-            if deb in list(list_of_pip_packages[node].keys()):
-                diff.append(list_of_pip_packages[node][deb])
-                row.append("{}: {}".format(node, list_of_pip_packages[node][deb]))
-            else:
-                row.append("{}: No module".format(node))
-        if diff.count(diff[0]) < len(nodes_with_packages):
-            if not is_deb_in_exception(inconsistency_rule, deb, row):
-                row.sort()
-                row.insert(0, deb)
-                modules_with_different_versions.append(row)
+        node_and_version = [
+            (node, list_of_pip_packages[node].get(package, "No module"))
+            for node in total_nodes
+            if not is_deb_in_exception(inconsistency_rule, package, node)
+        ]
+
+        if set([version for node, version in node_and_version]).__len__() > 1:
+            modules_with_different_versions[package] = [
+                f"{node}: {version}"
+                for node, version in node_and_version
+            ]
+
     assert len(modules_with_different_versions) == 0, (
         "Non-uniform pip modules are installed on '{}' group of nodes:\n"
         "{}".format(
