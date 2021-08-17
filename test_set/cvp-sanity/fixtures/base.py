@@ -25,7 +25,8 @@ def add_testname_to_saltapi_logs(request):
 
 @pytest.fixture(scope='session')
 def local_salt_client():
-    return utils.init_salt_client()
+    pytest.local_salt_client = utils.init_salt_client()
+    return pytest.local_salt_client
 
 
 nodes = utils.calculate_groups()
