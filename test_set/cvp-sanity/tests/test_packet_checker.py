@@ -39,7 +39,8 @@ def test_check_package_versions(local_salt_client, nodes_in_group):
         list. Mark 'No version' if package is not found.
         If package name in the exception list or in inconsistency_rule,
         ignore it.
-     4) Compare items in that list - they should be equal and match the amout of nodes
+     4) Compare items in that list - they should be equal and match the
+     amount of nodes
 
     """
     salt = local_salt_client
@@ -98,7 +99,7 @@ def test_check_package_versions(local_salt_client, nodes_in_group):
             'python-kazoo',
             'python-ipaddr',
             'libiscsi2:amd64']
-        }
+    }
     exclude_packages = utils.get_configuration().get("skipped_packages", [])
 
     group_name, nodes = nodes_in_group
@@ -132,7 +133,7 @@ def test_check_package_versions(local_salt_client, nodes_in_group):
 
         if set([version for node, version in node_and_version]).__len__() > 1:
             packages_with_different_versions[deb] = [
-                f"{node}: {version}"
+                "{}: {}".format(node, version)
                 for node, version in node_and_version]
 
     assert len(packages_with_different_versions) == 0, (
@@ -233,7 +234,7 @@ def test_check_module_versions(local_salt_client, nodes_in_group):
 
         if set([version for node, version in node_and_version]).__len__() > 1:
             modules_with_different_versions[package] = [
-                f"{node}: {version}"
+                "{}: {}".format(node, version)
                 for node, version in node_and_version
             ]
 
@@ -256,7 +257,7 @@ def test_restricted_updates_repo(local_salt_client):
     repos_by_nodes=local_salt_client.cmd(
         tgt="*",
         param="apt-cache policy |grep updates.mirantis.com"
-        )
+    )
 
     assert all(list(repos_by_nodes.values())), \
         "Next nodes don't have updates.mirantis.com in sources.list: {}".\
