@@ -1,3 +1,4 @@
+import json
 import utils
 import pytest
 
@@ -48,7 +49,7 @@ def test_checking_rabbitmq_cluster(local_salt_client):
         expr_form='compound'
     ).popitem()[1]) >= 0
 
-    suffix = ' --formatter erlang' if newer_rabbit else ''
+    suffix = ' --formatter json' if newer_rabbit else ''
     # request actual data from rmq nodes
     rabbit_actual_data = local_salt_client.cmd(
         tgt='rabbitmq:server',
@@ -56,6 +57,17 @@ def test_checking_rabbitmq_cluster(local_salt_client):
               r'| grep "nodes,\|running_nodes"'.format(suffix),
         expr_form='pillar'
     )
+    if newer_rabbit:
+        temp = {}
+        for node in rabbit_actual_data:
+            try:
+                node_data = json.loads(rabbit_actual_data[node])
+                temp[node] = "{}, {}".format(
+                    node_data["disk_nodes"], node_data["running_nodes"])
+            except json.decoder.JSONDecodeError:
+                pass
+        rabbit_actual_data = temp
+
     for node in rabbitmq_pillar_data:
         if node in config.get('skipped_nodes'):
             del rabbit_actual_data[node]
