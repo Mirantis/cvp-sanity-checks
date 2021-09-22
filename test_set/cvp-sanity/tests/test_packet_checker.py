@@ -57,6 +57,7 @@ def test_check_package_versions(local_salt_client, nodes_in_group):
             "octavia-worker",
             "octavia-health-manager",
             "octavia-housekeeping",
+            "python-castellan",
             'python-automaton',
             'python-setproctitle',
             'python-glanceclient',
@@ -196,7 +197,9 @@ def test_check_module_versions(local_salt_client, nodes_in_group):
             'Werkzeug',
             'jsonpointer',
             'gunicorn',
-            'ipaddr']
+            'ipaddr',
+            'castellan'
+        ]
     }
     exclude_modules = utils.get_configuration().get("skipped_modules", [])
     group, nodes = nodes_in_group
