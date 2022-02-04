@@ -22,7 +22,8 @@ def test_nova_hosts_consistent(local_salt_client):
     ironic = local_salt_client.test_ping(tgt='ironic:conductor')
     if ironic:
         ironic_nodes = [i.split('.')[0] for i in ironic]
-        grep_exclude_ironic = "| egrep -v '{}'".format("|".join(ironic_nodes))
+        grep_exclude_ironic = "| grep -v ironic | egrep -v '{}'" \
+                              "".format("|".join(ironic_nodes))
     else:
         grep_exclude_ironic = ""
 
