@@ -22,7 +22,7 @@ def test_cinder_services_are_up(local_salt_client, check_cinder_backends):
 def test_cinder_services_has_all_backends(local_salt_client, check_cinder_backends):
     """
         # Make sure that cinder backend exists with next command: `salt -C "I@cinder:controller" pillar.get cinder:controller:backend`
-        # Check that quantity of backend in cinder:controller:backend pillar is similar to list of volumes in cinder service-list
+        # Check that all backends in cinder:controller:backend pillar are linked with cinder volumes
     """
     backends_cinder = local_salt_client.pillar_get(
         tgt='cinder:controller',
@@ -32,7 +32,7 @@ def test_cinder_services_has_all_backends(local_salt_client, check_cinder_backen
         tgt='keystone:server',
         param='. /root/keystonercv3; cinder service-list | grep "volume" |grep -c -v -e "lvm"')
     backends_num = len(list(backends_cinder.keys()))
-    assert cinder_volume == str(backends_num), (
-        'Number of cinder-volume services ({0}) does not match number of '
-        'volume backends ({1}).'.format(cinder_volume, str(backends_num))
+    assert cinder_volume >= str(backends_num), (
+        'Number of cinder-volume services ({0}) is less than number of '
+        'volume backends ({1}). Some backends might not be linked with cinder-volume service'.format(cinder_volume, str(backends_num))
     )
