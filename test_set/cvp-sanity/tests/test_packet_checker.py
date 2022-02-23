@@ -50,7 +50,7 @@ def test_check_package_versions(local_salt_client, nodes_in_group):
             "rsync", "sysstat", "xz-utils"],
         "I@elasticsearch:server": [
             "python-elasticsearch"],
-        # PROD-30833
+        # PROD-30833, PROD-36718
         "I@octavia:manager:controller_worker:loadbalancer_topology:SINGLE": [
             "netfilter-persistent",
             "gunicorn",
@@ -99,7 +99,10 @@ def test_check_package_versions(local_salt_client, nodes_in_group):
             'libaio1:amd64',
             'python-kazoo',
             'python-ipaddr',
-            'libiscsi2:amd64']
+            'libiscsi2:amd64',
+            'python-pyasn1',
+            'python3-pyasn1'
+        ]
     }
     exclude_packages = utils.get_configuration().get("skipped_packages", [])
 
@@ -174,7 +177,7 @@ def test_check_module_versions(local_salt_client, nodes_in_group):
     # defines modules specific to the nodes
     inconsistency_rule = {
         "I@elasticsearch:server": ["elasticsearch"],
-        # PROD-30833, PROD-36718
+        # PROD-30833
         "I@octavia:manager:controller_worker:loadbalancer_topology:SINGLE": [
             'octavia',
             'setproctitle',
@@ -198,9 +201,7 @@ def test_check_module_versions(local_salt_client, nodes_in_group):
             'jsonpointer',
             'gunicorn',
             'ipaddr',
-            'castellan',
-            'python-pyasn1',
-            'python3-pyasn1'
+            'castellan'
         ]
     }
     exclude_modules = utils.get_configuration().get("skipped_modules", [])
