@@ -34,7 +34,7 @@ def test_reclass_nodes(local_salt_client):
         expr_form='pillar', check_status=True)
     salt = list(local_salt_client.cmd(
         tgt='salt:master',
-        param='salt-run manage.status timeout=10 --out=json',
+        param='salt-run manage.status timeout=10 --out=json --log-level=error',
         expr_form='pillar', check_status=True).values())[0] or {}
     reclass_warnings = reclass[list(reclass.keys())[0]].split('{\n  "base":')[0]
     if reclass_warnings:
