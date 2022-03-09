@@ -7,7 +7,7 @@ import pytest
 def test_minions_status(local_salt_client):
     result = local_salt_client.cmd(
         tgt='salt:master',
-        param='salt-run manage.status timeout=10 --out=json',
+        param='salt-run manage.status timeout=10 --out=json --log-level=error',
         expr_form='pillar', check_status=True)
     statuses = {}
     try:
