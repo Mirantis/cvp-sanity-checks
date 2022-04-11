@@ -47,8 +47,14 @@ def prometheus_rules():
 
     if not response.status_code == 200:
         logging.warning(
-            "Got response with incorrect status: {}".format(response))
-        return dict()
+            "Got response with incorrect status: {}. Switch to the internal network".format(response))
+        IP = salt.pillar_get(param='_param:prometheus_control_address')
+        proto = salt.pillar_get(param='_param:cluster_internal_protocol')
+        response = requests.get(
+            '{0}://{1}:15010/api/v1/rules'.format(proto, IP),
+            proxies=proxies,
+            auth=('prometheus', prometheus_password),
+            verify=False)
 
     content = json.loads(response.content.decode())
     rules = content['data']['groups'][0]["rules"]
