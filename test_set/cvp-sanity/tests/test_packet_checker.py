@@ -177,7 +177,7 @@ def test_check_module_versions(local_salt_client, nodes_in_group):
     # defines modules specific to the nodes
     inconsistency_rule = {
         "I@elasticsearch:server": ["elasticsearch"],
-        # PROD-30833
+        # PROD-30833, PROD-36718
         "I@octavia:manager:controller_worker:loadbalancer_topology:SINGLE": [
             'octavia',
             'setproctitle',
@@ -201,7 +201,8 @@ def test_check_module_versions(local_salt_client, nodes_in_group):
             'jsonpointer',
             'gunicorn',
             'ipaddr',
-            'castellan'
+            'castellan',
+            'pyasn1'
         ]
     }
     exclude_modules = utils.get_configuration().get("skipped_modules", [])
