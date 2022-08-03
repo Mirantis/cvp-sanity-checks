@@ -1,7 +1,7 @@
 FROM ubuntu:20.04
 
 LABEL maintainer="dev@mirantis.com"
-LABEL build_date="2021-07-01"
+LABEL build_date="2022-08-03"
 
 ENV DEBIAN_FRONTEND=noninteractive \
     DEBCONF_NONINTERACTIVE_SEEN=true \
