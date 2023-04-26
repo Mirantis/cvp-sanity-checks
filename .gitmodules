@@ -1,0 +1,4 @@
+[submodule "stacklight-pytest"]
+	path = test_set/cvp-stacklight
+	url = ssh://mcp-ci-gerrit@gerrit.mcp.mirantis.com:29418/mcp/stacklight-pytest
+	branch = release/2019.2.0

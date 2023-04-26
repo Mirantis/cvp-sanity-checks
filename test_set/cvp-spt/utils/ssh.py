@@ -141,10 +141,10 @@ class prepare_iperf(object):
         internet_at_vms = utils.get_configuration().get("internet_at_vms")
         if internet_at_vms.lower() == 'false':
             logger.debug("Using downloaded iperf package")
-            transport.put_file("/var/lib/iperf_2.0.5+dfsg1-2_amd64.deb",
-                               "/home/ubuntu/iperf_2.0.5+dfsg1-2_amd64.deb")
+            transport.put_file("/var/lib/iperf.deb",
+                               "/home/ubuntu/iperf.deb")
             transport.exec_command(
-                'sudo dpkg -i /home/ubuntu/iperf_2.0.5+dfsg1-2_amd64.deb')
+                'sudo dpkg -i /home/ubuntu/iperf.deb')
         else:
             logger.debug("Installing iperf using apt")
             transport.exec_command(
