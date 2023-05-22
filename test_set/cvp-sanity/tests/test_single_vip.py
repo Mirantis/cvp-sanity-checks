@@ -28,7 +28,7 @@ def test_single_vip_exists(local_salt_client):
              "I@ceph:mon or "                     # ceph mon
              "I@salt:master or "                  # cfg
              "I@neutron:gateway or "              # gtw
-             "I@powerdns:server or "              # dns
+             "I@powerdns:server or I@bind:server or "  # dns
              "I@debmirror:client or "             # apt
              "I@kubernetes:* and not I@etcd:*",   # k8s-cmp
          expr_form='compound').keys())
