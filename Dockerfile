@@ -30,11 +30,12 @@ RUN set -exo pipefail; \
     popd ;
 RUN apt-get update && apt-get  upgrade -y && \
     apt-get install -y build-essential curl git-core iputils-ping libffi-dev libldap2-dev libsasl2-dev libssl-dev patch vim-tiny wget \
-    python2.7 python2.7-dev python3.8 python3.8-dev python3-pip  \
-# Due to upstream bug we should use fixed version of pip
-    && pip3 install -U pip==20.0.2  \
-    && pip3 install tox==3.25.1 virtualenv==20.21.0
-    # initialize cvp stacklight test suite
+    python2.7 python2.7-dev python3.8 python3.8-dev python3-pip \
+    && pip install --upgrade pip setuptools>=65.5.1 wheel>=0.38.0 \
+    && apt-mark manual python3 python3-pip \
+    # tox==3.25.1 the latest version which supports python2.7 properly
+    # the same for virtualenv==20.21.0
+    && pip install -U tox==3.25.1 virtualenv==20.21.0
 RUN tox --recreate \
 # Cleanup
     && apt-get -y purge libx11-data xauth libxmuu1 libxcb1 libx11-6 libxext6 ppp pppconfig pppoeconf popularity-contest cpp gcc g++ libssl-doc && \
